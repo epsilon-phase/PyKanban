@@ -19,6 +19,7 @@ class KanbanItem:
     description:str
     completed:bool
     board:KanbanBoard
+    __slots__=('completed','board','priority','name','depends_on','description','assigned')
 
     def __init__(self, name, description,board:KanbanBoard=None,priority=Priority.MEDIUM):
         self.priority=priority

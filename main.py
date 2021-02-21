@@ -19,9 +19,10 @@ def closed():
     else:
         print("rejected")
 
-window.accepted.connect(closed)
-window.rejected.connect(closed)
-window.show()
+# window.accepted.connect(closed)
+# window.rejected.connect(closed)
+# window.show()
 henlo=KanbanBoardWindow(kbb)
+henlo.resize(640,480)
 henlo.show()
 app.exec_()

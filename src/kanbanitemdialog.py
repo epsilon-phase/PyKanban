@@ -1,13 +1,13 @@
 from src.kanban import KanbanItem, Priority, KanbanBoard
 from PySide2.QtWidgets import *
-from PySide2.QtCore import QCoreApplication
+from PySide2.QtCore import QCoreApplication,Signal
 translate = QCoreApplication.translate
 
 class KanbanItemDialog(QDialog):
     item: KanbanItem
     board: KanbanBoard
     addAtEnd:bool
-
+    NewItem:Signal = Signal(KanbanItem)
     def updateFromItem(self)->None:
         self.nameEdit.setText(self.item.name)
         self.descEdit.setText(self.item.description)
@@ -108,6 +108,7 @@ class KanbanItemDialog(QDialog):
             item.depends_on.append(self.dependencyList.item(i).data(32))
         from PySide2.QtCore import Qt
         item.completed = self.completed.checkState() == Qt.Checked
+        self.NewItem.emit(item)
         self.accept()
 
     def add_dependsOn(self)->None:

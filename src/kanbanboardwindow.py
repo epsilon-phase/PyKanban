@@ -3,6 +3,7 @@ from PySide2.QtWidgets import *
 from PySide2.QtCore import QCoreApplication,Qt
 from src.kanban import *
 from src.kanbanwidget import KanbanWidget 
+from src.kanbanitemdialog import KanbanItemDialog
 from typing import *
 
 class LabeledColumn(QWidget):
@@ -30,30 +31,34 @@ class KanbanBoardWidget(QScrollArea):
         super(KanbanBoardWidget,self).__init__()
         
         self.layout = QHBoxLayout()
+        self.addItem = QPushButton(self.tr("Add new Item"))
+        self.addItem.clicked.connect(self.openNew)
+        self.layout.addWidget(self.addItem)
         self.availableColumn = LabeledColumn(self.tr("Available"))
         self.completedColumn = LabeledColumn(self.tr("Completed"))
         self.blockedColumn = LabeledColumn(self.tr("Blocked"))
         self.layout.addWidget(self.availableColumn)
         self.layout.addWidget(self.completedColumn)
         self.layout.addWidget(self.blockedColumn)
+        self.root=QFrame()
+        self.root.setLayout(self.layout)
+        self.setWidgetResizable(True)
         self.board = k
         self.kanbanWidgets = []
-        self.setLayout(self.layout)
+        self.setWidget(self.root)
         self.populate()
 
+    def addKanbanItem(self,k:KanbanItem)->None:
+        state =k.state()
+        widg = KanbanWidget(None,k)
+        self.kanbanWidgets.append(widg)
+        self.selectColumn(state).addWidget(widg) 
+        widg.changed.connect(self.widgetChange)
+        
 
-    def populate(self):
+    def populate(self)->None:
         for i in self.board.items:
-            widg = KanbanWidget(None,i)
-            self.kanbanWidgets.append(widg)
-            state = i.state()
-            if state == ItemState.BLOCKED:
-                self.blockedColumn.addWidget(widg)
-            elif state==ItemState.COMPLETED:
-                self.completedColumn.addWidget(widg)
-            else:
-                self.availableColumn.addWidget(widg)
-            widg.changed.connect(self.widgetChange)
+            self.addKanbanItem(i)
 
     def selectColumn(self,state:ItemState)->LabeledColumn:
         selection=self.availableColumn
@@ -79,9 +84,15 @@ class KanbanBoardWidget(QScrollArea):
                 if widget.item in i.item.depends_on:
                     self.widgetChange(i,ItemState.BLOCKED,i.item.state)
 
+    def openNew(self,k:KanbanItem)->None:
+        dialog = KanbanItemDialog(self,None,self.board)
+        dialog.NewItem.connect(self.addKanbanItem)
+        dialog.open()   
+
 
 class KanbanBoardWindow(QMainWindow):
     def __init__(self, kb:KanbanBoard=None):
         super(KanbanBoardWindow,self).__init__()
 
         self.setCentralWidget(KanbanBoardWidget(kb))
+        self.setWindowTitle(self.tr("PyKanban"))
