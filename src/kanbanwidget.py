@@ -50,6 +50,9 @@ class ClickableLabel(QLabel):
         super(ClickableLabel,self).mousePressEvent(event)
 
 class KanbanWidget(QFrame):
+    """
+    A widget for displaying a Kanban item
+    """
     item:KanbanItem
     changed:Signal = Signal(QWidget,ItemState,ItemState)
     description: QLabel

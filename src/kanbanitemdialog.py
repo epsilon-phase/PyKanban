@@ -108,7 +108,9 @@ class KanbanItemDialog(QDialog):
             item.depends_on.append(self.dependencyList.item(i).data(32))
         from PySide2.QtCore import Qt
         item.completed = self.completed.checkState() == Qt.Checked
-        self.NewItem.emit(item)
+        if self.addAtEnd:
+            self.board.add_item(item)
+            self.NewItem.emit(item)
         self.accept()
 
     def add_dependsOn(self)->None:
