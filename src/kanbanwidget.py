@@ -101,7 +101,10 @@ class KanbanWidget(QFrame):
         self.name.setText(self.item.name)
         self.description.setText(self.item.description)
         self.finished.setChecked(self.item.completed)
-        self.setFrameShadow(QFrame.Plain if not self.item.blocked() else QFrame.Sunken)
+        blocked = self.item.blocked()
+        self.setFrameShadow(QFrame.Plain if not blocked else QFrame.Sunken)
+        if blocked:
+            self.setToolTip('Blocked by\n' + "\n".join(map(lambda x:x.short_name(),self.item.getBlockers())))
 
     def openEditingDialog(self)->None:
         self.priorState=self.item.state()

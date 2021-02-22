@@ -40,9 +40,40 @@ class KanbanItem:
         return self.name
 
     def blocked(self)->bool:
+        """
+        Returns true if all tasks this depends on are completed.
+        """
+        if self.completed:
+            return False
         return not all(map(lambda x:x.completed,self.depends_on))
 
-    def print(self,complete=False,level=0):
+    def getBlockers(self)->List[KanbanItem]:
+        """
+        Returns the list of items responsible for this item being blocked
+        """
+        result = []
+        for i in self.depends_on:
+            if i.blocked():
+                result+=i.getBlockers()
+            if not i.completed:
+                result+=[i]
+        return result
+
+    def hasCycle(self, seen:Set[KanbanItem]=None, path:List[KanbanItem]=None)->bool:
+        seen = set() if seen is none else seen
+        path = [] if path is None else path
+        if self in path:
+            path.pop()
+            return True
+        seen.add(self)
+        path.append(self)
+        for i in self.depends_on():
+            if i.hasCycle(seen,path):
+                return True
+        path.pop()
+        return False
+
+    def print(self,complete:bool=False,level:int=0)->None:
         depth = '\t'*level
         print(f"{depth}Name:{self.name}")
         print(f"{depth}Description:'{self.description}'")
@@ -67,6 +98,11 @@ class KanbanBoard:
         self.items=[]
 
     def find_matching(self,text:str)->List[KanbanItem]:
+        """
+        Return items that contain specified text in either the name or description
+        :param text: The text to search for
+        :returns: A list of items that match the text
+        """
         matches = []
         for i in filter(lambda x:x.matches(text),self.items):
             matches.append(i)
@@ -77,7 +113,10 @@ class KanbanBoard:
         item.board=self
 
     def remove_item(self, item:KanbanItem)->None:
-        "Remove an item in the kanbanboard, including all dependencies."
+        """
+        Remove an item in the kanbanboard, including all dependency lists.
+        :param item: The kanban item being removed
+        """
         if item not in self.items:
             return
         item_dx=self.items.index(item)
