@@ -1,5 +1,3 @@
-from tkinter import *
-
 import src.kanban as kanban
 import src.kanbanitemdialog as psy 
 from src.kanbanboardwindow import KanbanBoardWindow

@@ -1,13 +1,15 @@
 from src.kanban import KanbanItem, Priority, KanbanBoard
 from PySide2.QtWidgets import *
-from PySide2.QtCore import QCoreApplication,Signal
+from PySide2.QtCore import QCoreApplication, Signal
 translate = QCoreApplication.translate
+
 
 class KanbanItemDialog(QDialog):
     item: KanbanItem
     board: KanbanBoard
-    addAtEnd:bool
-    NewItem:Signal = Signal(KanbanItem)
+    addAtEnd: bool
+    NewItem: Signal = Signal(KanbanItem)
+
     def updateFromItem(self)->None:
         self.nameEdit.setText(self.item.name)
         self.descEdit.setText(self.item.description)
@@ -22,10 +24,11 @@ class KanbanItemDialog(QDialog):
         :param kbI: The KanbanItem(Not modified )
         :param kbb: The KanbanBoard that will draw data from
         """
-        
+
         super(KanbanItemDialog, self).__init__(parent)
         self.addAtEnd = kbI is None
-        self.item = kbI if kbI is not None else KanbanItem("","",Priority.MEDIUM, kbb)
+        self.item = kbI if kbI is not None else KanbanItem(
+            "", "", Priority.MEDIUM, kbb)
         self.board = kbb
         layout = QFormLayout()
 
@@ -93,7 +96,6 @@ class KanbanItemDialog(QDialog):
 
         layout.addWidget(container)
 
-
     def updateItem(self)->None:
         """
         Update the KanbanItem from the widget values
@@ -136,7 +138,7 @@ class KanbanItemDialog(QDialog):
                 continue
             self.dependsOnCombo.addItem(i.short_name(), i)
 
-    def dependency_selector_changed_index(self,_)->None:
+    def dependency_selector_changed_index(self, _)->None:
         self.add_dependency_button.setEnabled(
             self.dependsOnCombo.currentIndex() != -1)
 
@@ -147,9 +149,5 @@ class KanbanItemDialog(QDialog):
     def remove_button_clicked(self)->None:
         items = self.dependencyList.selectedItems()
         for i in items:
-            self.dependencyList.removeItemWidget(i)
-
-        self.populateDependsOn()
-
-
-
+            self.dependencyList.takeItem(self.dependencyList.row(i))
+            self.dependsOnCombo.addItem(i.data(32).short_name(), i.data(32))

@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import *
 from enum import Enum,auto
+import pickle
+
 
 class Priority(Enum):
     HIGH=auto()
@@ -86,5 +88,11 @@ class KanbanBoard:
             item_dx = i.depends_on.index(item)
             del i.depends_on[item_dx]
 
+    def save(self, filename:str)->None:
+        with open(filename,'wb') as f:
+            f.write(pickle.dumps(self))
 
+    def load(filename:str)->KanbanBoard:
+        with open(filename,'rb') as f:
+            return pickle.load(f)
 
