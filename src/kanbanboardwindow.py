@@ -62,6 +62,10 @@ class KanbanBoardWidget(QScrollArea):
             self.addKanbanItem(i)
 
     def selectColumn(self, state: ItemState)->LabeledColumn:
+        """
+        Obtain the appropriate column for a widget to end up in given its item state
+        :param state: The state of the kanbanitem the widget contains
+        """
         selection = self.availableColumn
         if state == ItemState.COMPLETED:
             selection = self.completedColumn
@@ -83,7 +87,7 @@ class KanbanBoardWidget(QScrollArea):
             # Ofc, this is probably more than enough for most things :)
             for i in self.kanbanWidgets:
                 if widget.item in i.item.depends_on:
-                    self.widgetChange(i, ItemState.BLOCKED, i.item.state)
+                    self.widgetChange(i, ItemState.BLOCKED, i.item.state())
 
     def openNewItem(self, k: KanbanItem)->None:
         dialog = KanbanItemDialog(self, None, self.board)
@@ -105,16 +109,23 @@ class KanbanBoardWindow(QMainWindow):
 
     def __init__(self, kb: KanbanBoard = None):
         super(KanbanBoardWindow, self).__init__()
+        
         mb = self.menuBar()
         filemenu = mb.addMenu(self.tr("File"))
+        
         new = filemenu.addAction(self.tr("New"))
         new.triggered.connect(self.newBoard)
+        
         save = filemenu.addAction(self.tr("Save"))
         save.triggered.connect(self.openSave)
+
         load = filemenu.addAction(self.tr("Load"))
         load.triggered.connect(self.openLoad)
+        
         self.kanban = KanbanBoardWidget(kb)
+        
         self.setCentralWidget(self.kanban)
+        
         self.setWindowTitle(self.tr("PyKanban"))
 
     def openSave(self):
