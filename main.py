@@ -5,10 +5,6 @@ from PySide2.QtWidgets import *
 
 app = QApplication([])
 kbb = kanban.KanbanBoard()
-kbb.add_item(kanban.KanbanItem("hello","",kanban.Priority.MEDIUM))
-kbi1 = kanban.KanbanItem("henlo2","",kanban.Priority.LOW)
-kbi1.depends_on.append(kbb.items[0])
-kbb.add_item(kbi1)
 window=psy.KanbanItemDialog(kbb=kbb)
 def closed():
     if window.result()==QDialog.DialogCode.Accepted:
