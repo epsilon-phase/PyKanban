@@ -15,20 +15,35 @@ class LabeledColumn(QScrollArea):
     def __init__(self, text: str):
         super(LabeledColumn, self).__init__()
         self.layout = QVBoxLayout()
+        self.layout.setAlignment(Qt.AlignTop)
         label = QLabel(text)
         label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.layout.addWidget(label)
+
+        self.toggleButton = QPushButton(self.tr("Collapse"))
+        self.toggleButton.clicked.connect(self.toggleWidgetDisplay)
+        self.layout.addWidget(self.toggleButton)
         
         frame = QFrame()
         frame.setLayout(self.layout)
+
+        self.widgetArea = QVBoxLayout()
+        self.widgetPanel = QFrame()
+        self.widgetPanel.setLayout(self.widgetArea)
+        self.layout.addWidget(self.widgetPanel)
+
         self.setWidgetResizable(True)
 
         self.setWidget(frame)
 
-
+    def toggleWidgetDisplay(self)->None:
+        self.toggleButton.setText(self.tr("Expand") 
+                                  if self.widgetPanel.isVisible() else self.tr("Collapse")
+                                  )
+        self.widgetPanel.setVisible(not self.widgetPanel.isVisible())
 
     def addWidget(self, widget: QWidget)->None:
-        self.layout.addWidget(widget)
+        self.widgetArea.addWidget(widget)
 
 
 class KanbanBoardWidget(QFrame):
@@ -101,7 +116,7 @@ class KanbanBoardWidget(QFrame):
 
     def filterChanged(self):
         query = self.searchText.text()
-        self.board.for_each_matching(lambda x,y:x.widget.setVisible(y),query)
+        self.board.for_each_by_matching(lambda x,y:x.widget.setVisible(y),query)
 
     def removeFrom(self, widget: QWidget, state: ItemState)->None:
         self.layout().removeWidget(widget)

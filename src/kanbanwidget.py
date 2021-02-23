@@ -57,7 +57,6 @@ class KanbanWidget(QFrame):
     changed:Signal = Signal(QWidget,ItemState,ItemState)
     description: QLabel
     name:ClickableLabel
-    # editButton:QPushButton
     finished:QCheckBox
     """
     Simple short display for kanban items :)
@@ -75,6 +74,7 @@ class KanbanWidget(QFrame):
         self.item.widget=self
 
         layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignTop)
         self.setLayout(layout)
 
         self.name = ClickableLabel()

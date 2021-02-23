@@ -122,7 +122,12 @@ class KanbanBoard:
         self.items=[]
         self.filename=None
 
-    def for_each_matching(self,func:Callable[(KanbanItem,bool)],query:str)->None:
+    def for_each_by_matching(self,func:Callable[(KanbanItem,bool)],query:str)->None:
+        """
+        Call a function on each item, also passing in a bool indicating its matchiness
+        :param func: The function to call
+        :param query: The query to match against
+        """
         for i in self.items:
             func(i,i.matches(query))
 
