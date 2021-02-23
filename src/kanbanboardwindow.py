@@ -179,6 +179,8 @@ class KanbanBoardWindow(QMainWindow):
         thing = QFileDialog.getSaveFileName(filter="Kanban Boards (*.kb)")
         print(thing)
         filename: str = thing[0]
+        if filename == '':
+            return filename
         if not filename.endswith(".kb"):
             filename += ".kb"
         return filename
