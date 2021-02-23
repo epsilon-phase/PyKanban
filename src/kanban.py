@@ -60,15 +60,20 @@ class KanbanItem:
         return result
 
     def hasCycle(self, seen:Set[KanbanItem]=None, path:List[KanbanItem]=None)->bool:
+        """
+        Returns true if there is a cycle in the dependencies of an item.
+        """
         seen = set() if seen is none else seen
         path = [] if path is None else path
         if self in path:
-            path.pop()
             return True
+        if self in seen:
+            return False
         seen.add(self)
         path.append(self)
         for i in self.depends_on():
             if i.hasCycle(seen,path):
+                path.pop()
                 return True
         path.pop()
         return False
@@ -94,8 +99,11 @@ class KanbanItem:
 
 class KanbanBoard:
     items: List[KanbanItem]
+    filename: str
+
     def __init__(self):
         self.items=[]
+        self.filename=None
 
     def find_matching(self,text:str)->List[KanbanItem]:
         """
@@ -128,8 +136,12 @@ class KanbanBoard:
             del i.depends_on[item_dx]
 
     def save(self, filename:str)->None:
+        if filename is not None:
+            self.filename = filename
+        else:
+            filename = self.filename
         with open(filename,'wb') as f:
-            f.write(pickle.dumps(self))
+            pickle.dump(self,f)
 
     def load(filename:str)->KanbanBoard:
         with open(filename,'rb') as f:
