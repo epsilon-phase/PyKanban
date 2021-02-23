@@ -1,13 +1,14 @@
 from __future__ import annotations
 from PySide2.QtWidgets import *
 from PySide2.QtCore import QCoreApplication, Qt, Slot
+from PySide2.QtGui import QKeySequence
 from src.kanban import *
 from src.kanbanwidget import KanbanWidget
 from src.kanbanitemdialog import KanbanItemDialog
 from typing import *
 
 
-class LabeledColumn(QWidget):
+class LabeledColumn(QScrollArea):
     label: QLabel
     layout: QVBoxLayout
 
@@ -17,7 +18,12 @@ class LabeledColumn(QWidget):
         label = QLabel(text)
         label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.layout.addWidget(label)
-        self.setLayout(self.layout)
+        
+        frame = QFrame()
+        frame.setLayout(self.layout)
+        self.setWidgetResizable(True)
+
+        self.setWidget(frame)
 
     def removeWidget(self, widget: QWidget)->None:
         self.layout.removeWidget(widget)
@@ -26,28 +32,49 @@ class LabeledColumn(QWidget):
         self.layout.addWidget(widget)
 
 
-class KanbanBoardWidget(QScrollArea):
+class KanbanBoardWidget(QFrame):
     kanbanWidgets: List[KanbanWidget]
 
     def __init__(self, k: KanbanBoard):
         super(KanbanBoardWidget, self).__init__()
 
-        self.layout = QHBoxLayout()
+        self.mainlayout = QHBoxLayout()
+
+        mainpanel = QFrame()
+        mainpanel.setLayout(self.mainlayout)
+
+        utilityPanel = QFrame()
+        utilityLayout = QVBoxLayout()
+        utilityPanel.setLayout(utilityLayout)
+        
         self.addItem = QPushButton(self.tr("Add new Item"))
         self.addItem.clicked.connect(self.openNewItem)
-        self.layout.addWidget(self.addItem)
+        utilityLayout.addWidget(self.addItem)
+
+        self.searchText= QLineEdit()
+        utilityLayout.addWidget(self.searchText)
+        self.searchText.textChanged.connect(self.filterChanged)
+
+
+
         self.availableColumn = LabeledColumn(self.tr("Available"))
         self.completedColumn = LabeledColumn(self.tr("Completed"))
         self.blockedColumn = LabeledColumn(self.tr("Blocked"))
-        self.layout.addWidget(self.availableColumn)
-        self.layout.addWidget(self.completedColumn)
-        self.layout.addWidget(self.blockedColumn)
-        self.root = QFrame()
-        self.root.setLayout(self.layout)
-        self.setWidgetResizable(True)
+        self.mainlayout.addWidget(self.availableColumn)
+        self.mainlayout.addWidget(self.completedColumn)
+        self.mainlayout.addWidget(self.blockedColumn)
+        # self.root = QFrame()
+        # self.root.setLayout(self.layout)
+        # self.setWidgetResizable(True)
         self.board = k
         self.kanbanWidgets = []
-        self.setWidget(self.root)
+        
+        splitter = QSplitter()
+        splitter.addWidget(utilityPanel)
+        splitter.addWidget(mainpanel)
+
+        self.setLayout(QHBoxLayout())
+        self.layout().addWidget(splitter)
         self.populate()
 
     def addKanbanItem(self, k: KanbanItem)->None:
@@ -72,6 +99,11 @@ class KanbanBoardWidget(QScrollArea):
         elif state == ItemState.BLOCKED:
             selection = self.blockedColumn
         return selection
+
+    def filterChanged(self):
+        query = self.searchText.text()
+        for i in self.kanbanWidgets:
+            i.setVisible(i.item.matches(query))
 
     def removeFrom(self, widget: QWidget, state: ItemState)->None:
         self.selectColumn(state).removeWidget(widget)
@@ -110,32 +142,55 @@ class KanbanBoardWindow(QMainWindow):
     def __init__(self, kb: KanbanBoard = None):
         super(KanbanBoardWindow, self).__init__()
         
+        self.kanban = KanbanBoardWidget(kb)
+        self.setCentralWidget(self.kanban)
+
         mb = self.menuBar()
         filemenu = mb.addMenu(self.tr("File"))
-        
+
         new = filemenu.addAction(self.tr("New"))
         new.triggered.connect(self.newBoard)
         
         save = filemenu.addAction(self.tr("Save"))
         save.triggered.connect(self.openSave)
+        save.setShortcut(QKeySequence("Ctrl+S"))
+
+        saveAs = filemenu.addAction(self.tr("Save As"))
+        saveAs.triggered.connect(self.openSaveAs)
+        saveAs.setShortcut(QKeySequence("Ctrl+Shift+S"))
 
         load = filemenu.addAction(self.tr("Load"))
         load.triggered.connect(self.openLoad)
-        
-        self.kanban = KanbanBoardWidget(kb)
-        
-        self.setCentralWidget(self.kanban)
+
+        boardmenu = mb.addMenu(self.tr("Board"))
+
+        addItem = boardmenu.addAction(self.tr("add item"))
+        addItem.triggered.connect(self.kanban.openNewItem)
+        addItem.setShortcut(QKeySequence("Ctrl+a"))
         
         self.setWindowTitle(self.tr("PyKanban"))
 
-    def openSave(self):
+
+    def getSaveFilename(self)->str:
         thing = QFileDialog.getSaveFileName(filter="Kanban Boards (*.kb)")
         print(thing)
-        if thing[0] == "":
-            return
         filename: str = thing[0]
         if not filename.endswith(".kb"):
             filename += ".kb"
+        return filename
+
+    def openSave(self):
+        filename = self.kanban.board.filename
+        if self.kanban.board.filename is None:
+            filename = self.getSaveFilename()
+            if filename == '':
+                return
+        self.kanban.board.save(filename)
+
+    def openSaveAs(self):
+        filename = self.getSaveFilename()
+        if filename=='':
+            return
         self.kanban.board.save(filename)
 
     def openLoad(self):
@@ -152,5 +207,3 @@ class KanbanBoardWindow(QMainWindow):
     def newBoard(self):
         kb = KanbanBoard()
         self.kanban.newBoard(kb)
-        print("Should be cleared now")
-        print(f"kanban board has {len(self.kanban.board.items)} items")
