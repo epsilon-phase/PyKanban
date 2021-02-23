@@ -36,6 +36,9 @@ class KanbanItemDialog(QDialog):
         self.board = kbb
         layout = QFormLayout()
 
+        self.setWindowTitle(self.tr("Editing: ")+(self.item.name if self.item.name !='' else "New Item"))
+
+
         self.nameEdit = QLineEdit(self.item.name)
         layout.addRow(self.tr("Name"), self.nameEdit)
 
