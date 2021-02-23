@@ -25,8 +25,7 @@ class LabeledColumn(QScrollArea):
 
         self.setWidget(frame)
 
-    def removeWidget(self, widget: QWidget)->None:
-        self.layout.removeWidget(widget)
+
 
     def addWidget(self, widget: QWidget)->None:
         self.layout.addWidget(widget)
@@ -105,7 +104,7 @@ class KanbanBoardWidget(QFrame):
         self.board.for_each_matching(lambda x,y:x.widget.setVisible(y),query)
 
     def removeFrom(self, widget: QWidget, state: ItemState)->None:
-        self.selectColumn(state).removeWidget(widget)
+        self.layout().removeWidget(widget)
 
     def addTo(self, widget: QWidget, state: ItemState)->None:
         self.selectColumn(state).addWidget(widget)
