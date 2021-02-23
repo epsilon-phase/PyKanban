@@ -5,7 +5,7 @@ A small kanban application written in python.
 * [X] Write saving stuff
 * [ ] Task Dependency visualization
 * [ ] Type categorization
-* [ ] Filtering
-* [ ] Searching
+* [X] Filtering
+* [X] Searching
 * [ ] Cycle Detection
 * [ ] Extra-long description truncationl
