@@ -69,9 +69,11 @@ class KanbanWidget(QFrame):
         """
         super(KanbanWidget,self).__init__(parent)
 
-        self.setSizePolicy(QSizePolicy(QSizePolicy.Maximum,QSizePolicy.MinimumExpanding))
+        self.setSizePolicy(QSizePolicy(QSizePolicy.Expanding,QSizePolicy.MinimumExpanding))
         self.setFrameShape(QFrame.StyledPanel)
         self.item=kbi
+        self.item.widget=self
+
         layout = QVBoxLayout()
         self.setLayout(layout)
 

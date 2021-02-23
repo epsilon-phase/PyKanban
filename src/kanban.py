@@ -21,7 +21,8 @@ class KanbanItem:
     description:str
     completed:bool
     board:KanbanBoard
-    __slots__=('completed','board','priority','name','depends_on','description','assigned')
+    widget: QWidget
+    __slots__=('completed','board','priority','name','depends_on','description','assigned','widget')
 
     def __init__(self, name, description,board:KanbanBoard=None,priority=Priority.MEDIUM):
         self.priority=priority
@@ -31,6 +32,7 @@ class KanbanItem:
         self.completed=False
         self.assigned=None
         self.board=board
+        self.widget = None
 
     def matches(self,text:str)->bool:
         text = text.lower()
@@ -97,6 +99,16 @@ class KanbanItem:
             return ItemState.COMPLETED
         return ItemState.AVAILABLE
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['widget']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.widget = None
+
+
 class KanbanBoard:
     items: List[KanbanItem]
     filename: str
@@ -104,6 +116,10 @@ class KanbanBoard:
     def __init__(self):
         self.items=[]
         self.filename=None
+
+    def for_each_matching(self,func:Callable[(KanbanItem,bool)],query:str):
+        for i in self.items:
+            func(i,i.matches(query))
 
     def find_matching(self,text:str)->List[KanbanItem]:
         """

@@ -102,8 +102,7 @@ class KanbanBoardWidget(QFrame):
 
     def filterChanged(self):
         query = self.searchText.text()
-        for i in self.kanbanWidgets:
-            i.setVisible(i.item.matches(query))
+        self.board.for_each_matching(lambda x,y:x.widget.setVisible(y),query)
 
     def removeFrom(self, widget: QWidget, state: ItemState)->None:
         self.selectColumn(state).removeWidget(widget)
@@ -167,9 +166,14 @@ class KanbanBoardWindow(QMainWindow):
         addItem = boardmenu.addAction(self.tr("add item"))
         addItem.triggered.connect(self.kanban.openNewItem)
         addItem.setShortcut(QKeySequence("Ctrl+a"))
+
+        search_shortcut = QShortcut(QKeySequence("Ctrl+F"),self)
+        search_shortcut.activated.connect(self.selectSearchBar)
         
         self.setWindowTitle(self.tr("PyKanban"))
 
+    def selectSearchBar(self):
+        self.kanban.searchText.setFocus(Qt.ShortcutFocusReason)
 
     def getSaveFilename(self)->str:
         thing = QFileDialog.getSaveFileName(filter="Kanban Boards (*.kb)")
