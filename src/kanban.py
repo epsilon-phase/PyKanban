@@ -95,6 +95,10 @@ class KanbanItem:
                 i.print(complete,level+1)
 
     def state(self)->ItemState:
+        """
+        Return the completion state of the item
+        :returns: If the item is Blocked, Completed, or Available to be done
+        """
         if self.blocked():
             return ItemState.BLOCKED
         if self.completed:
@@ -143,6 +147,10 @@ class KanbanBoard:
         return matches
 
     def add_item(self,item:KanbanItem)->None:
+        """
+        Add an item to the kanbanboard, setting its parent slot to the board
+        :param item: The item to add
+        """
         self.items.append(item)
         item.board=self
 
@@ -162,6 +170,10 @@ class KanbanBoard:
             del i.depends_on[item_dx]
 
     def save(self, filename:str)->None:
+        """
+        Save the kanban board to a file
+        :param filename: The file that will be dumped to
+        """
         if filename is not None:
             self.filename = filename
         else:
@@ -170,6 +182,10 @@ class KanbanBoard:
             pickle.dump(self,f)
 
     def load(filename:str)->KanbanBoard:
+        """
+        Load a kanbanboard from a file
+        :param filename: The filename to load the kanban board from
+        """
         with open(filename,'rb') as f:
             return pickle.load(f)
 
