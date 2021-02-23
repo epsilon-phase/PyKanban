@@ -29,6 +29,7 @@ class KanbanItem:
         self.name=name
         self.description=description
         self.depends_on = []
+        self.priority=priority
         self.completed=False
         self.assigned=None
         self.board=board

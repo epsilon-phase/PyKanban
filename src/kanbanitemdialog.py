@@ -13,8 +13,13 @@ class KanbanItemDialog(QDialog):
     def updateFromItem(self)->None:
         self.nameEdit.setText(self.item.name)
         self.descEdit.setText(self.item.description)
-        self.prioritySelect.setCurrentIndex(self.item.priority)
         self.completed.setChecked(self.item.completed)
+        print(self.item.priority)
+        for i in range(self.prioritySelect.count()):
+            if self.prioritySelect.itemData(i)==self.item.priority:
+                self.prioritySelect.setCurrentIndex(i)
+                break
+
         self.populateDependsOn()
 
     def __init__(self, parent=None, kbI: KanbanItem = None, kbb: KanbanBoard = None):
@@ -95,6 +100,8 @@ class KanbanItemDialog(QDialog):
         container.setLayout(hlayout)
 
         layout.addWidget(container)
+
+        self.updateFromItem()
 
     def updateItem(self)->None:
         """
