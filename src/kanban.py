@@ -23,6 +23,7 @@ class KanbanItem:
     board:KanbanBoard
     widget: QWidget
     __slots__=('completed','board','priority','name','depends_on','description','assigned','widget')
+    __weakref__=('widget')
 
     def __init__(self, name, description,board:KanbanBoard=None,priority=Priority.MEDIUM):
         self.priority=priority
@@ -101,13 +102,16 @@ class KanbanItem:
         return ItemState.AVAILABLE
 
     def __getstate__(self):
-        state = self.__dict__.copy()
+        state = dict((slot,getattr(self,slot))
+            for slot in self.__slots__
+            if hasattr(self,slot))
         del state['widget']
         return state
 
     def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.widget = None
+        for slot,value in state.items():
+            setattr(self,slot,value)
+        self.widget=None
 
 
 class KanbanBoard:
@@ -118,7 +122,7 @@ class KanbanBoard:
         self.items=[]
         self.filename=None
 
-    def for_each_matching(self,func:Callable[(KanbanItem,bool)],query:str):
+    def for_each_matching(self,func:Callable[(KanbanItem,bool)],query:str)->None:
         for i in self.items:
             func(i,i.matches(query))
 

@@ -14,7 +14,6 @@ class KanbanItemDialog(QDialog):
         self.nameEdit.setText(self.item.name)
         self.descEdit.setText(self.item.description)
         self.completed.setChecked(self.item.completed)
-        print(self.item.priority)
         for i in range(self.prioritySelect.count()):
             if self.prioritySelect.itemData(i)==self.item.priority:
                 self.prioritySelect.setCurrentIndex(i)

@@ -126,8 +126,7 @@ class KanbanBoardWidget(QFrame):
 
     def newBoard(self, board: KanbanBoard)->None:
         for i in self.kanbanWidgets:
-            for column in [self.availableColumn, self.blockedColumn, self.completedColumn]:
-                column.removeWidget(i)
+            self.layout().removeWidget(i)
             i.deleteLater()
         self.kanbanWidgets.clear()
         self.board = board
@@ -168,8 +167,14 @@ class KanbanBoardWindow(QMainWindow):
 
         search_shortcut = QShortcut(QKeySequence("Ctrl+F"),self)
         search_shortcut.activated.connect(self.selectSearchBar)
-        
-        self.setWindowTitle(self.tr("PyKanban"))
+
+        self.updateTitle()
+
+    def updateTitle(self):
+        title = self.tr("Pykanban")
+        if self.kanban.board.filename is not None:
+            title+=f": {self.kanban.board.filename}"
+        self.setWindowTitle(title)
 
     def selectSearchBar(self):
         self.kanban.searchText.setFocus(Qt.ShortcutFocusReason)
@@ -191,12 +196,15 @@ class KanbanBoardWindow(QMainWindow):
             if filename == '':
                 return
         self.kanban.board.save(filename)
+        self.updateTitle()
+
 
     def openSaveAs(self):
         filename = self.getSaveFilename()
         if filename=='':
             return
         self.kanban.board.save(filename)
+        self.updateTitle()
 
     def openLoad(self):
         from pickle import UnpicklingError
@@ -206,6 +214,7 @@ class KanbanBoardWindow(QMainWindow):
         try:
             new_kanban = KanbanBoard.load(thing[0])
             self.kanban.newBoard(new_kanban)
+            self.updateTitle()
         except UnpicklingError:
             print("Huh")
 
