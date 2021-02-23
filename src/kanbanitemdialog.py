@@ -11,6 +11,9 @@ class KanbanItemDialog(QDialog):
     NewItem: Signal = Signal(KanbanItem)
 
     def updateFromItem(self)->None:
+        """
+        Update the control values from the item
+        """
         self.nameEdit.setText(self.item.name)
         self.descEdit.setText(self.item.description)
         self.completed.setChecked(self.item.completed)
@@ -125,6 +128,10 @@ class KanbanItemDialog(QDialog):
         self.accept()
 
     def add_dependsOn(self)->None:
+        """
+        Handle adding an item as selected in the combobox to the item's 
+        dependencies
+        """
         thing = self.dependsOnCombo.currentData()
         self.dependsOnCombo.removeItem(self.dependsOnCombo.currentIndex())
         self.item.depends_on.append(thing)
@@ -133,6 +140,9 @@ class KanbanItemDialog(QDialog):
         item.setData(32, thing)
 
     def populateDependsOn(self)->None:
+        """
+        Populate available dependencies and trim existing ones
+        """
         self.dependencyList.clear()
         self.dependsOnCombo.clear()
         for i in self.item.depends_on:
@@ -148,14 +158,25 @@ class KanbanItemDialog(QDialog):
             self.dependsOnCombo.addItem(i.short_name(), i)
 
     def dependency_selector_changed_index(self, _)->None:
+        """
+        Update whether or not the add-dependency button is enabled
+        based on whether or not the selected index is valid
+        """
         self.add_dependency_button.setEnabled(
             self.dependsOnCombo.currentIndex() != -1)
 
     def updateSelectedList(self)->None:
+        """
+        Enable the remove-dependency button based on whether 
+        or not there are items selected in the listbox
+        """
         self.remove_dependency_button.setEnabled(
             len(self.dependencyList.selectedIndexes()) > 0)
 
     def remove_button_clicked(self)->None:
+        """
+        Handle actually removing the selected items from the selected dependencies
+        """
         items = self.dependencyList.selectedItems()
         for i in items:
             self.dependencyList.takeItem(self.dependencyList.row(i))
