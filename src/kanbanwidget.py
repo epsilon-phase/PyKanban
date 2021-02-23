@@ -2,8 +2,12 @@ from PySide2.QtWidgets import *
 from src.kanban import *
 from src.kanbanitemdialog import *
 from PySide2.QtCore import Signal,QEvent,Qt
-from PySide2.QtGui import QMouseEvent,QCursor
+from PySide2.QtGui import QMouseEvent, QCursor
 from typing import Callable
+import re
+
+description_trunc = re.compile("^(.{0,200}\\s?)",re.MULTILINE)
+
 class ClickableLabel(QLabel):
     clicked = Signal()
     def __init__(self,text:str="", parent:QLabel=None):
@@ -26,7 +30,6 @@ class ClickableLabel(QLabel):
         
 
     def event(self,event:QEvent)->None:
-        
         if event.type()==QEvent.HoverEnter:
             self.hoverEnter()
         elif event.type()==QEvent.HoverLeave:
@@ -101,7 +104,12 @@ class KanbanWidget(QFrame):
 
     def updateDisplay(self):
         self.name.setText(self.item.name)
-        self.description.setText(self.item.description)
+        if len(self.item.description)>200:
+            shortened=  description_trunc.search(self.item.description)
+
+            self.description.setText(shortened.group(1) + "...")
+        else:
+            self.description.setText(self.item.description)
         self.finished.setChecked(self.item.completed)
         blocked = self.item.blocked()
         self.setFrameShadow(QFrame.Plain if not blocked else QFrame.Sunken)

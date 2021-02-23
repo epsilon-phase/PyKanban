@@ -8,4 +8,4 @@ A small kanban application written in python.
 * [X] Filtering
 * [X] Searching
 * [ ] Cycle Detection
-* [ ] Extra-long description truncationl
+* [x] Extra-long description truncationl

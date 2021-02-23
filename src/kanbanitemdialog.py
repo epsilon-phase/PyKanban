@@ -1,6 +1,7 @@
 from src.kanban import KanbanItem, Priority, KanbanBoard
 from PySide2.QtWidgets import *
 from PySide2.QtCore import QCoreApplication, Signal
+
 translate = QCoreApplication.translate
 
 
@@ -15,6 +16,7 @@ class KanbanItemDialog(QDialog):
         Update the control values from the item
         """
         self.nameEdit.setText(self.item.name)
+        
         self.descEdit.setText(self.item.description)
         self.completed.setChecked(self.item.completed)
         for i in range(self.prioritySelect.count()):
@@ -42,10 +44,10 @@ class KanbanItemDialog(QDialog):
         self.setWindowTitle(self.tr("Editing: ")+(self.item.name if self.item.name !='' else "New Item"))
 
 
-        self.nameEdit = QLineEdit(self.item.name)
+        self.nameEdit = QLineEdit("")
         layout.addRow(self.tr("Name"), self.nameEdit)
 
-        self.descEdit = QTextEdit(self.item.description)
+        self.descEdit = QTextEdit("")
         layout.addRow(self.tr('Description'), self.descEdit)
 
         self.prioritySelect = QComboBox()
