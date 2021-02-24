@@ -1,13 +1,14 @@
 from __future__ import annotations
 from typing import *
-from enum import Enum,auto
+from enum import IntEnum,Enum,auto
 import pickle
 
 
-class Priority(Enum):
+class Priority(IntEnum):
     HIGH=auto()
     MEDIUM=auto()
     LOW=auto()
+
 
 class ItemState(Enum):
     COMPLETED=auto()
