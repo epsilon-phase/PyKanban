@@ -14,7 +14,6 @@ app.setApplicationName("Pykanban")
 settings = QSettings()
 defaults.initialize_to_defaults()
 kbb = kanban.KanbanBoard()
-
 if bool(settings.value(settingNames.OPEN_LAST_USED_DOCUMENT)):
     val=settings.value(settingNames.LAST_DOCUMENT_USED)
     print(f"Found last document of {val}")

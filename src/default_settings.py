@@ -1,7 +1,7 @@
 from PySide2.QtCore import QSettings
 from typing import *
 
-defaults = {
+_defaults_ = {
 	"Display":{
         "DescriptionLength":200
     },
@@ -30,4 +30,4 @@ def check_slash_set(settings:QSettings, configuration_path:List[str], currentIte
 
 def initialize_to_defaults():
     settings=QSettings()
-    check_slash_set(settings,[],defaults)
+    check_slash_set(settings,[],_defaults_)
