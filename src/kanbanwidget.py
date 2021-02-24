@@ -1,12 +1,11 @@
 from PySide2.QtWidgets import *
 from src.kanban import *
 from src.kanbanitemdialog import *
-from PySide2.QtCore import Signal,QEvent,Qt
+from PySide2.QtCore import Signal,QEvent,Qt,QSettings
 from PySide2.QtGui import QMouseEvent, QCursor
 from typing import Callable
 import re
 
-description_trunc = re.compile("^(.{0,200}\\s?)",re.MULTILINE)
 
 class ClickableLabel(QLabel):
     """
@@ -57,22 +56,27 @@ class ClickableLabel(QLabel):
 
 class KanbanWidget(QFrame):
     """
-    A widget for displaying a Kanban item
+    Simple short display for kanban items :)
     """
+
     item:KanbanItem
     changed:Signal = Signal(QWidget,ItemState,ItemState)
     description: QLabel
     name:ClickableLabel
     finished:QCheckBox
-    """
-    Simple short display for kanban items :)
-    """
+    description_trunc = None
+    @staticmethod 
+    def updateDescriptionLength():
+        length = int(QSettings().value("Description/DisplayLength"))
+        KanbanWidget.description_trunc = re.compile(f"^(.{{0,{length}}}\\s?)")
+    
     def __init__(self, parent:QWidget=None, kbi:KanbanItem=None):
         """
         :param parent: The parent widget
         :param kbi: The KanbanItem displayed
         """
         super(KanbanWidget,self).__init__(parent)
+        KanbanWidget.updateDescriptionLength()
 
         self.setSizePolicy(QSizePolicy(QSizePolicy.Expanding,QSizePolicy.MinimumExpanding))
         self.setFrameShape(QFrame.StyledPanel)
@@ -112,7 +116,7 @@ class KanbanWidget(QFrame):
         """
         self.name.setText(self.item.name)
         if len(self.item.description)>200:
-            shortened=  description_trunc.search(self.item.description)
+            shortened=  KanbanWidget.description_trunc.search(self.item.description)
             self.description.setText(shortened.group(1) + "...")
         else:
             self.description.setText(self.item.description)
