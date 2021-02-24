@@ -106,7 +106,6 @@ class KanbanWidget(QFrame):
         self.name.setText(self.item.name)
         if len(self.item.description)>200:
             shortened=  description_trunc.search(self.item.description)
-
             self.description.setText(shortened.group(1) + "...")
         else:
             self.description.setText(self.item.description)

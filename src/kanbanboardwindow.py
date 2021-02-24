@@ -42,8 +42,21 @@ class LabeledColumn(QScrollArea):
                                   )
         self.widgetPanel.setVisible(not self.widgetPanel.isVisible())
 
+    def sort_widgets(self):
+        widg = []
+        for i in range(self.widgetArea.count()):
+            i = self.widgetArea.itemAt(i).widget()
+            if i is None:
+                continue
+            self.layout.removeWidget(i)
+            widg.append(i)
+        widg.sort(key=lambda x:x.item.priority)
+        for i in widg:
+            self.widgetArea.addWidget(i)
+
     def addWidget(self, widget: QWidget)->None:
         self.widgetArea.addWidget(widget)
+        self.sort_widgets()
 
 
 class KanbanBoardWidget(QFrame):
