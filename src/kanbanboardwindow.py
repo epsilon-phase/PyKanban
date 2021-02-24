@@ -141,6 +141,8 @@ class KanbanBoardWidget(QFrame):
         self.selectColumn(state).addWidget(widget)
 
     def widgetChange(self, widget: QWidget, fromState: ItemState, toState: ItemState)->None:
+        if fromState == toState:
+            return
         self.removeFrom(widget, fromState)
         self.addTo(widget, toState)
         if toState == ItemState.COMPLETED:
@@ -211,7 +213,6 @@ class KanbanBoardWindow(QMainWindow):
         self.kanban.searchText.setFocus(Qt.ShortcutFocusReason)
 
     def getSaveFilename(self)->str:
-        
         thing = QFileDialog.getSaveFileName(filter="Kanban Boards (*.kb)")
         print(thing)
         filename: str = thing[0]

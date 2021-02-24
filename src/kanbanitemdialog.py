@@ -155,7 +155,7 @@ class KanbanItemDialog(QDialog):
         if self.board is None:
             return
         for i in self.board.items:
-            if i in self.item.depends_on:
+            if i in self.item.depends_on or i is self.item:
                 continue
             self.dependsOnCombo.addItem(i.short_name(), i)
 

@@ -32,9 +32,9 @@ class KanbanItem:
         self.description=description
         self.depends_on = []
         self.priority=priority
-        self.completed=False
-        self.assigned=None
-        self.board=board
+        self.completed = False
+        self.assigned = None
+        self.board = board
         self.widget = None
 
     def matches(self,text:str)->bool:
@@ -64,23 +64,18 @@ class KanbanItem:
                 result+=[i]
         return result
 
-    def hasCycle(self, seen:Set[KanbanItem]=None, path:List[KanbanItem]=None)->bool:
+    def hasCycle(self, path:Set[KanbanItem]=None)->bool:
         """
         Returns true if there is a cycle in the dependencies of an item.
         """
-        seen = set() if seen is none else seen
-        path = [] if path is None else path
+        path = path if path is not None else set()
         if self in path:
             return True
-        if self in seen:
-            return False
-        seen.add(self)
-        path.append(self)
-        for i in self.depends_on():
-            if i.hasCycle(seen,path):
-                path.pop()
+        path.add(self)
+        for i in self.depends_on:
+            if i.hasCycle(path):
                 return True
-        path.pop()
+        path.remove(self)
         return False
 
     def print(self,complete:bool=False,level:int=0)->None:
@@ -182,6 +177,7 @@ class KanbanBoard:
         with open(filename,'wb') as f:
             pickle.dump(self,f)
 
+    @staticmethod
     def load(filename:str)->KanbanBoard:
         """
         Load a kanbanboard from a file
