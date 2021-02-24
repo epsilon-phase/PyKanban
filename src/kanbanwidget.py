@@ -9,6 +9,9 @@ import re
 description_trunc = re.compile("^(.{0,200}\\s?)",re.MULTILINE)
 
 class ClickableLabel(QLabel):
+    """
+    A QLabel that handles clicked and hover events.
+    """
     clicked = Signal()
     def __init__(self,text:str="", parent:QLabel=None):
         super(ClickableLabel,self).__init__(text,parent)
@@ -103,6 +106,10 @@ class KanbanWidget(QFrame):
 
 
     def updateDisplay(self):
+        """
+        Update the displayed information from the KanbanItem associated with the
+        widget.
+        """
         self.name.setText(self.item.name)
         if len(self.item.description)>200:
             shortened=  description_trunc.search(self.item.description)
@@ -116,12 +123,20 @@ class KanbanWidget(QFrame):
             self.setToolTip('Blocked by\n' + "\n".join(map(lambda x:x.short_name(),self.item.getBlockers())))
 
     def openEditingDialog(self)->None:
+        """
+        Handle opening the editing dialog
+        """
         self.priorState=self.item.state()
         self.dialog = KanbanItemDialog(self,self.item,self.item.board)
         self.dialog.finished.connect(self.finishDialog)
         self.dialog.open()
 
     def finishDialog(self,code):
+        """
+        Handle the editing dialog being closed, if it's accepted
+        then it must also update the widget displays and emit a
+        'changed' signal
+        """
         if code==QDialog.Accepted:
             self.updateDisplay()
             self.changed.emit(self,self.priorState,self.item.state())
