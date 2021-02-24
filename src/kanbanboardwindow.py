@@ -33,6 +33,7 @@ class LabeledColumn(QScrollArea):
         self.layout.addWidget(self.widgetPanel)
 
         self.setWidgetResizable(True)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         self.setWidget(frame)
 

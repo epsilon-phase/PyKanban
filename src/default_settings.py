@@ -2,8 +2,8 @@ from PySide2.QtCore import QSettings
 from typing import *
 
 defaults = {
-	"Description":{
-        "DisplayLength":200
+	"Display":{
+        "DescriptionLength":200
     }
 }
 

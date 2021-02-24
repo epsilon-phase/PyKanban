@@ -1,6 +1,7 @@
 from PySide2.QtWidgets import *
 from src.kanban import *
 from src.kanbanitemdialog import *
+import src.settingNames as settingNames
 from PySide2.QtCore import Signal,QEvent,Qt,QSettings
 from PySide2.QtGui import QMouseEvent, QCursor
 from typing import Callable
@@ -61,13 +62,13 @@ class KanbanWidget(QFrame):
 
     item:KanbanItem
     changed:Signal = Signal(QWidget,ItemState,ItemState)
-    description: QLabel
+    description: QTextEdit
     name:ClickableLabel
     finished:QCheckBox
     description_trunc = None
     @staticmethod 
     def updateDescriptionLength():
-        length = int(QSettings().value("Description/DisplayLength"))
+        length = int(QSettings().value(settingNames.MAX_DESCRIPTION_LENGTH))
         KanbanWidget.description_trunc = re.compile(f"^(.{{0,{length}}}\\s?)")
     
     def __init__(self, parent:QWidget=None, kbi:KanbanItem=None):
@@ -78,7 +79,7 @@ class KanbanWidget(QFrame):
         super(KanbanWidget,self).__init__(parent)
         KanbanWidget.updateDescriptionLength()
 
-        self.setSizePolicy(QSizePolicy(QSizePolicy.Expanding,QSizePolicy.MinimumExpanding))
+        self.setSizePolicy(QSizePolicy(QSizePolicy.Preferred,QSizePolicy.MinimumExpanding))
         self.setFrameShape(QFrame.StyledPanel)
         self.item=kbi
         self.item.widget=self
@@ -90,11 +91,19 @@ class KanbanWidget(QFrame):
         self.name = ClickableLabel()
         self.name.setToolTip(self.tr("Edit"))
         self.name.clicked.connect(self.openEditingDialog)
-        layout.addWidget(self.name)
+        fn = self.name.font()
+        fn.setPointSizeF(1.2*fn.pointSizeF())
+        self.name.setFont(fn)
+        self.name.setWordWrap(True)
+        self.name.setAlignment(Qt.AlignTop|Qt.AlignLeft)
+        layout.addWidget(self.name,alignment=Qt.AlignTop|Qt.AlignLeft)
         
-        self.description = QLabel()
+
+        self.description = QTextEdit()
+        self.description.setReadOnly(True)
+        
         layout.addWidget(self.description)
-        self.description.setWordWrap(True)
+        
 
         self.finished =QCheckBox(self.tr("Finished"))
         self.finished.setEnabled(False)
@@ -115,16 +124,19 @@ class KanbanWidget(QFrame):
         widget.
         """
         self.name.setText(self.item.name)
+        self.name.updateGeometry()
         if len(self.item.description)>200:
             shortened=  KanbanWidget.description_trunc.search(self.item.description)
             self.description.setText(shortened.group(1) + "...")
         else:
             self.description.setText(self.item.description)
+        self.description.updateGeometry()
         self.finished.setChecked(self.item.completed)
         blocked = self.item.blocked()
         self.setFrameShadow(QFrame.Plain if not blocked else QFrame.Sunken)
         if blocked:
             self.setToolTip('Blocked by\n' + "\n".join(map(lambda x:x.short_name(),self.item.getBlockers())))
+        self.updateGeometry()
 
     def openEditingDialog(self)->None:
         """
