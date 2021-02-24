@@ -44,6 +44,8 @@ class LabeledColumn(QScrollArea):
         self.widgetPanel.setVisible(not self.widgetPanel.isVisible())
 
     def sort_widgets(self):
+        #At some point it would be a *very* good idea to rewrite this
+        #so that it isn't O(n+nlog(n) complexity)
         widg = []
         for i in range(self.widgetArea.count()):
             i = self.widgetArea.itemAt(i).widget()

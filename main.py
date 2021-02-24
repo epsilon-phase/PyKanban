@@ -1,5 +1,4 @@
 import src.kanban as kanban
-import src.kanbanitemdialog as psy 
 from src.kanbanboardwindow import KanbanBoardWindow
 import src.default_settings as defaults
 import src.settingNames as settingNames
