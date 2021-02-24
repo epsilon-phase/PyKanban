@@ -1,6 +1,6 @@
 from __future__ import annotations
 from PySide2.QtWidgets import *
-from PySide2.QtCore import QCoreApplication, Qt, Slot
+from PySide2.QtCore import QCoreApplication, Qt, Slot, QSettings
 from PySide2.QtGui import QKeySequence
 from src.kanban import *
 from src.kanbanwidget import KanbanWidget
@@ -209,6 +209,7 @@ class KanbanBoardWindow(QMainWindow):
         self.kanban.searchText.setFocus(Qt.ShortcutFocusReason)
 
     def getSaveFilename(self)->str:
+        
         thing = QFileDialog.getSaveFileName(filter="Kanban Boards (*.kb)")
         print(thing)
         filename: str = thing[0]
@@ -219,20 +220,26 @@ class KanbanBoardWindow(QMainWindow):
         return filename
 
     def openSave(self):
+        from src.settingNames import LAST_DOCUMENT_USED
         filename = self.kanban.board.filename
         if self.kanban.board.filename is None:
             filename = self.getSaveFilename()
             if filename == '':
                 return
+        settings=QSettings()
+        settings.setValue(LAST_DOCUMENT_USED,filename)
         self.kanban.board.save(filename)
         self.updateTitle()
 
 
     def openSaveAs(self):
+        from src.settingNames import LAST_DOCUMENT_USED
         filename = self.getSaveFilename()
         if filename=='':
             return
+        settings=QSettings()
         self.kanban.board.save(filename)
+        settings.setValue(LAST_DOCUMENT_USED,filename)
         self.updateTitle()
 
     def openLoad(self):
