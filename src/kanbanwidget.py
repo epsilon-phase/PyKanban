@@ -65,11 +65,7 @@ class KanbanWidget(QFrame):
     description: QTextEdit
     name:ClickableLabel
     finished:QCheckBox
-    description_trunc = None
-    @staticmethod 
-    def updateDescriptionLength():
-        length = int(QSettings().value(settingNames.MAX_DESCRIPTION_LENGTH))
-        KanbanWidget.description_trunc = re.compile(f"^(.{{0,{length}}}\\s?)")
+    
     
     def __init__(self, parent:QWidget=None, kbi:KanbanItem=None):
         """
@@ -77,7 +73,6 @@ class KanbanWidget(QFrame):
         :param kbi: The KanbanItem displayed
         """
         super(KanbanWidget,self).__init__(parent)
-        KanbanWidget.updateDescriptionLength()
 
         self.setSizePolicy(QSizePolicy(QSizePolicy.Preferred,QSizePolicy.MinimumExpanding))
         self.setFrameShape(QFrame.StyledPanel)
@@ -101,8 +96,11 @@ class KanbanWidget(QFrame):
 
         self.description = QTextEdit()
         self.description.setReadOnly(True)
+        s=QSettings()
+        line_count=int(s.value(settingNames.MAX_DESCRIPTION_LENGTH))
+        self.description.setMaximumHeight(self.description.fontMetrics().height()*line_count)
         
-        layout.addWidget(self.description)
+        layout.addWidget(self.description,alignment=Qt.AlignTop)
         
 
         self.finished =QCheckBox(self.tr("Finished"))
@@ -125,12 +123,7 @@ class KanbanWidget(QFrame):
         """
         self.name.setText(self.item.name)
         self.name.updateGeometry()
-        if len(self.item.description)>200:
-            shortened=  KanbanWidget.description_trunc.search(self.item.description)
-            self.description.setText(shortened.group(1) + "...")
-        else:
-            self.description.setText(self.item.description)
-        self.description.updateGeometry()
+        self.description.setText(self.item.description)
         self.finished.setChecked(self.item.completed)
         blocked = self.item.blocked()
         self.setFrameShadow(QFrame.Plain if not blocked else QFrame.Sunken)

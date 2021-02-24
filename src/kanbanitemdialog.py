@@ -157,6 +157,8 @@ class KanbanItemDialog(QDialog):
         for i in self.board.items:
             if i in self.item.depends_on or i is self.item:
                 continue
+            if self.item in i.depends_on:
+                continue
             self.dependsOnCombo.addItem(i.short_name(), i)
 
     def dependency_selector_changed_index(self, _)->None:

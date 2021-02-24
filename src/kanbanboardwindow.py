@@ -204,6 +204,9 @@ class KanbanBoardWindow(QMainWindow):
         self.updateTitle()
 
     def updateTitle(self):
+        """
+        Update the window's title to indicate the open file(when available)
+        """
         title = self.tr("Pykanban")
         if self.kanban.board.filename is not None:
             title+=f": {self.kanban.board.filename}"

@@ -3,7 +3,7 @@ from typing import *
 
 _defaults_ = {
 	"Display":{
-        "DescriptionLength":200
+        "DescriptionLines":3
     },
     "Usability":{
         "OpenLastDocument":True
