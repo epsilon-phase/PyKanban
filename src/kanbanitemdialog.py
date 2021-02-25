@@ -1,8 +1,66 @@
 from src.kanban import KanbanItem, Priority, KanbanBoard
 from PySide2.QtWidgets import *
-from PySide2.QtCore import QCoreApplication, Signal
+from PySide2.QtCore import QCoreApplication, Signal, Qt
+from typing import *
 
 translate = QCoreApplication.translate
+
+class CategorySelectDialog(QDialog):
+    categories_selected = Signal(dict)
+    def __init__(self,k:KanbanItem,parent:QWidget=None):
+        super(CategorySelectDialog,self).__init__(parent)
+        self.item=k
+
+        gridlayout=QGridLayout()
+
+        self.categoryInput = QLineEdit()
+        gridlayout.addWidget(self.categoryInput,0,0,1,1)
+        addCategory = QPushButton(self.tr("Add Category"))
+        addCategory.clicked.connect(self.addCategory)
+        gridlayout.addWidget(addCategory,0,1,1,1)
+
+        self.categorySelector = QListWidget()
+        self.categorySelector.itemActivated.connect(self.changeItem)
+        gridlayout.addWidget(self.categorySelector,1,0,1,2)
+
+        acceptButton = QPushButton(self.tr("Accept"))
+        acceptButton.clicked.connect(self.accept)
+        gridlayout.addWidget(acceptButton,2,0,1,1)
+
+        cancelButton=QPushButton(self.tr("Cancel"))
+        cancelButton.clicked.connect(self.reject)
+        gridlayout.addWidget(cancelButton,2,1,1,1)
+
+        self.setLayout(gridlayout)
+
+        self.finished.connect(self.acceptChanges)
+
+        self.populate()
+
+    def populate(self):
+        for i in self.item.board.categories:
+            item = QListWidgetItem(i,self.categorySelector)
+            item.setCheckState(Qt.Checked if i in self.item.category else Qt.Unchecked)
+
+    def addCategory(self):
+        cat = self.categoryInput.text()
+        if cat == '':
+            return
+        item = QListWidgetItem(cat,self.categorySelector)
+        item.setCheckState(Qt.Checked)
+        self.categoryInput.setText("")
+
+    def changeItem(self,item:QListWidgetItem):
+        item.setCheckState(Qt.Unchecked if item.checkState()==Qt.Checked else Qt.Checked)
+
+    def acceptChanges(self, code):
+        if code!=self.Accepted:
+            return
+        result:Dict[str,bool] = dict()
+        for i in range(self.categorySelector.count()):
+            item = self.categorySelector.item(i)
+            result[item.text()] = item.checkState()==Qt.Checked
+        self.categories_selected.emit(result)
 
 
 class KanbanItemDialog(QDialog):
@@ -39,6 +97,7 @@ class KanbanItemDialog(QDialog):
         self.item = kbI if kbI is not None else KanbanItem(
             "", "", Priority.MEDIUM, kbb)
         self.board = kbb
+        self.category_changeset = None
         layout = QFormLayout()
 
         self.setWindowTitle(self.tr("Editing: ")+(self.item.name if self.item.name !='' else "New Item"))
@@ -93,11 +152,16 @@ class KanbanItemDialog(QDialog):
         self.completed = QCheckBox(self.tr("Completed"))
         layout.addRow("", self.completed)
 
+        editCategory=QPushButton(self.tr("Edit categories"))
+        editCategory.clicked.connect(self.openCategorySelector)
+        layout.addWidget(editCategory)
+
         self.accept_button = QPushButton(self.tr("Accept"))
         self.cancel_button = QPushButton(self.tr("Cancel"))
         self.accept_button.clicked.connect(self.updateItem)
         self.accept_button.clicked.connect(self.accept)
         self.cancel_button.clicked.connect(self.reject)
+
 
         container = QFrame()
         hlayout = QHBoxLayout()
@@ -107,6 +171,7 @@ class KanbanItemDialog(QDialog):
         container.setLayout(hlayout)
 
         layout.addWidget(container)
+
 
         self.updateFromItem()
 
@@ -127,6 +192,11 @@ class KanbanItemDialog(QDialog):
         if self.addAtEnd:
             self.board.add_item(item)
             self.NewItem.emit(item)
+        if self.category_changeset is not None:
+            for cat,val in self.category_changeset.items():
+                item.update_category(cat,val)
+        print(item.category)
+
         self.accept()
 
     def add_dependsOn(self)->None:
@@ -188,3 +258,11 @@ class KanbanItemDialog(QDialog):
         for i in items:
             self.dependencyList.takeItem(self.dependencyList.row(i))
             self.dependsOnCombo.addItem(i.data(32).short_name(), i.data(32))
+
+    def openCategorySelector(self):
+        a=CategorySelectDialog(self.item,self)
+        a.show()
+        a.categories_selected.connect(self.updateCategories)
+
+    def updateCategories(self,categories:Dict[str,bool]):
+        self.category_changeset=categories

@@ -129,6 +129,17 @@ class KanbanWidget(QFrame):
         self.setFrameShadow(QFrame.Plain if not blocked else QFrame.Sunken)
         if blocked:
             self.setToolTip('Blocked by\n' + "\n".join(map(lambda x:x.short_name(),self.item.getBlockers())))
+        if self.item.category is not None and len(self.item.category)>0:
+            category = None
+            for i in self.item.category:
+                if i in self.item.board.category_data.keys():
+                    category=i
+                    break
+            if category in self.item.board.category_data.keys():
+                color:QColor = self.item.board.category_data[category]
+                print(color)
+                print(f"color: rgb({color.red()},{color.green()},{color.blue()})")
+                self.name.setStyleSheet(f"color: rgb({color.red()},{color.green()},{color.blue()})")
         self.updateGeometry()
 
     def openEditingDialog(self)->None:

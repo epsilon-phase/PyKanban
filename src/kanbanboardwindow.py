@@ -5,6 +5,7 @@ from PySide2.QtGui import QKeySequence
 from src.kanban import *
 from src.kanbanwidget import KanbanWidget
 from src.kanbanitemdialog import KanbanItemDialog
+from src.categorylist import CategoryEditor
 from typing import *
 
 
@@ -81,6 +82,10 @@ class KanbanBoardWidget(QFrame):
         self.addItem.clicked.connect(self.openNewItem)
         utilityLayout.addWidget(self.addItem)
 
+        self.categoryButton = QPushButton(self.tr("Edit Categories"))
+        self.categoryButton.clicked.connect(self.openCategoryEditor)
+        utilityLayout.addWidget(self.categoryButton)
+
         self.searchText= QLineEdit()
         utilityLayout.addWidget(self.searchText)
         self.searchText.textChanged.connect(self.filterChanged)
@@ -156,6 +161,11 @@ class KanbanBoardWidget(QFrame):
         dialog = KanbanItemDialog(self, None, self.board)
         dialog.NewItem.connect(self.addKanbanItem)
         dialog.open()
+
+    def openCategoryEditor(self)->None:
+        c = CategoryEditor(self.board,self)
+        c.show()
+
 
     def newBoard(self, board: KanbanBoard)->None:
         for i in self.kanbanWidgets:

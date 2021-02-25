@@ -23,7 +23,8 @@ class KanbanItem:
     completed:bool
     board:KanbanBoard
     widget: QWidget
-    __slots__=('completed','board','priority','name','depends_on','description','assigned','widget')
+    category: Set[str]
+    __slots__=('completed','board','priority','name','depends_on','description','assigned','widget', 'category')
     __weakref__=('widget')
 
     def __init__(self, name, description,board:KanbanBoard=None,priority=Priority.MEDIUM):
@@ -36,6 +37,7 @@ class KanbanItem:
         self.assigned = None
         self.board = board
         self.widget = None
+        self.category = set()
 
     def matches(self,text:str)->bool:
         text = text.lower()
@@ -101,6 +103,30 @@ class KanbanItem:
             return ItemState.COMPLETED
         return ItemState.AVAILABLE
 
+    def add_category(self,category:str)->None:
+        """
+        Add a category to the item, since this requires ensuring that
+        it also exists in the board, it is best handled as a setter type
+        of function
+
+        :param category: The name of the category
+        """
+        self.category.add(category)
+        if self.board is not None:
+            self.board.categories.add(category)
+            print(f"Adding category to board {category}")
+        else:
+            print(f"Not adding category to board {category}")
+
+    def remove_category(self,category:str)->None:
+        self.category.remove(category)
+
+    def update_category(self,category:str,state:bool)->None:
+        if state:
+            self.add_category(category)
+        else:
+            self.remove_category(category)
+
     def __getstate__(self):
         state = dict((slot,getattr(self,slot))
             for slot in self.__slots__
@@ -112,15 +138,27 @@ class KanbanItem:
         for slot,value in state.items():
             setattr(self,slot,value)
         self.widget=None
+        self._fill_in_missing()
+
+    def _fill_in_missing(self):
+        if not hasattr(self,'category'):
+            setattr(self,'category',set())
+            print(f"Setting category to {self.category}")
+        if isinstance(self.category,list):
+            self.category=set(self.category)
 
 
 class KanbanBoard:
     items: List[KanbanItem]
     filename: str
+    categories: Set[str]
+    category_data: Dict[str,Any]
 
     def __init__(self):
         self.items=[]
         self.filename=None
+        self.categories=set()
+        self.category_data=dict()
 
     def for_each_by_matching(self,func:Callable[(KanbanItem,bool)],query:str)->None:
         """
@@ -177,6 +215,11 @@ class KanbanBoard:
         with open(filename,'wb') as f:
             pickle.dump(self,f)
 
+    def _fix_missing(self)->None:
+        if not hasattr(self,'categories'):
+            self.categories=set()
+            self.category_data=dict()
+
     @staticmethod
     def load(filename:str)->KanbanBoard:
         """
@@ -184,4 +227,6 @@ class KanbanBoard:
         :param filename: The filename to load the kanban board from
         """
         with open(filename,'rb') as f:
-            return pickle.load(f)
+            c=pickle.load(f)
+            c._fix_missing()
+            return c
