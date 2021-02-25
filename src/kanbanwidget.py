@@ -87,9 +87,9 @@ class KanbanWidget(QFrame):
         self.name.setToolTip(self.tr("Edit"))
         self.name.clicked.connect(self.openEditingDialog)
         fn = self.name.font()
-        fn.setPointSizeF(1.2*fn.pointSizeF())
+        # fn.setPointSizeF(1.2*fn.pointSizeF())
         self.name.setFont(fn)
-        self.name.setWordWrap(True)
+        # self.name.setWordWrap(True)
         self.name.setAlignment(Qt.AlignTop|Qt.AlignLeft)
         layout.addWidget(self.name,alignment=Qt.AlignTop|Qt.AlignLeft)
         
@@ -128,7 +128,7 @@ class KanbanWidget(QFrame):
         blocked = self.item.blocked()
         self.setFrameShadow(QFrame.Plain if not blocked else QFrame.Sunken)
         if blocked:
-            self.setToolTip('Blocked by\n' + "\n".join(map(lambda x:x.short_name(),self.item.getBlockers())))
+            self.setToolTip(self.tr('Blocked by') + "\n" + "\n".join(map(lambda x:x.short_name(),self.item.getBlockers())))
         if self.item.category is not None and len(self.item.category)>0:
             category = None
             for i in self.item.category:

@@ -259,10 +259,10 @@ class KanbanItemDialog(QDialog):
             self.dependencyList.takeItem(self.dependencyList.row(i))
             self.dependsOnCombo.addItem(i.data(32).short_name(), i.data(32))
 
-    def openCategorySelector(self):
+    def openCategorySelector(self)->None:
         a=CategorySelectDialog(self.item,self)
         a.show()
         a.categories_selected.connect(self.updateCategories)
 
-    def updateCategories(self,categories:Dict[str,bool]):
+    def updateCategories(self,categories:Dict[str,bool])->None:
         self.category_changeset=categories
