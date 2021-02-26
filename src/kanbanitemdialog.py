@@ -15,6 +15,8 @@ class CategorySelectDialog(QDialog):
 
         self.categoryInput = QLineEdit()
         gridlayout.addWidget(self.categoryInput,0,0,1,1)
+        self.categoryInput.returnPressed.connect(self.addCategory)
+
         addCategory = QPushButton(self.tr("Add Category"))
         addCategory.clicked.connect(self.addCategory)
         gridlayout.addWidget(addCategory,0,1,1,1)

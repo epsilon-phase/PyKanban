@@ -5,24 +5,44 @@ import pickle
 
 
 class Priority(IntEnum):
+    """
+    The priority of a task
+    """
     HIGH=auto()
     MEDIUM=auto()
     LOW=auto()
 
 
 class ItemState(Enum):
+    """
+    The status of a task
+    """
+    #: The task is completed
     COMPLETED=auto()
+    #: The task is blocked
     BLOCKED=auto()
+    #: The task is Available for completion
     AVAILABLE=auto()
 
 class KanbanItem:
+    """
+    A task on a kanban board.
+    """
+    #: The list of tasks this task depends on to be completed
     depends_on:List[KanbanItem]
+    #: The name of the task
     name:str
+    #: The tasks' priority
     priority:Priority
+    #: The description of a task
     description:str
+    #: Whether or not the task is completed
     completed:bool
+    #: The parent board
     board:KanbanBoard
+    #:The parent widget, will be None until initialized
     widget: QWidget
+    #: The set of categories this task is under
     category: Set[str]
     __slots__=('completed','board','priority','name','depends_on','description','assigned','widget', 'category')
     __weakref__=('widget')
@@ -39,9 +59,27 @@ class KanbanItem:
         self.widget = None
         self.category = set()
 
+    def category_matches(self,text:str)->bool:
+        """
+        Determine if a category is matched by the string
+
+        :param text: The text to search for.
+        :returns: If any category in this task partially matches the string
+        """
+        for i in self.category:
+            if text in i:
+                return True
+        return False
+
     def matches(self,text:str)->bool:
+        """
+        Determine if this item matches a search string
+
+        :param text: The text to search for
+        """
         text = text.lower()
-        return text in self.name.lower() or text in self.description.lower()
+        return text in self.name.lower() or text in self.description.lower() \
+               or self.category_matches(text)
 
     def short_name(self)->str:
         return self.name
@@ -95,6 +133,7 @@ class KanbanItem:
     def state(self)->ItemState:
         """
         Return the completion state of the item
+
         :returns: If the item is Blocked, Completed, or Available to be done
         """
         if self.blocked():
@@ -123,6 +162,12 @@ class KanbanItem:
             self.category.remove(category)
 
     def update_category(self,category:str,state:bool)->None:
+        """
+        Convenience to add or remove a category based on a bool.
+
+        :param category: The name of the category
+        :param state: Should it add (if true) or remove (if false)
+        """
         if state:
             self.add_category(category)
         else:
@@ -142,9 +187,17 @@ class KanbanItem:
         self._fill_in_missing()
 
     def _fill_in_missing(self):
+        """
+        Since categories were added later on, and presumably additional 
+        things may be added to the structure here, it may be useful to keep
+        this around for good luck
+        """
         if not hasattr(self,'category'):
             setattr(self,'category',set())
             print(f"Setting category to {self.category}")
+        if self.category is None:
+            self.category = set()
+            print("Filled in missing category set")
         if isinstance(self.category,list):
             self.category=set(self.category)
 
@@ -164,6 +217,7 @@ class KanbanBoard:
     def for_each_by_matching(self,func:Callable[(KanbanItem,bool)],query:str)->None:
         """
         Call a function on each item, also passing in a bool indicating its matchiness
+
         :param func: The function to call
         :param query: The query to match against
         """
@@ -173,6 +227,7 @@ class KanbanBoard:
     def find_matching(self,text:str)->List[KanbanItem]:
         """
         Return items that contain specified text in either the name or description
+        
         :param text: The text to search for
         :returns: A list of items that match the text
         """
@@ -184,6 +239,7 @@ class KanbanBoard:
     def add_item(self,item:KanbanItem)->None:
         """
         Add an item to the kanbanboard, setting its parent slot to the board
+        
         :param item: The item to add
         """
         self.items.append(item)
@@ -192,6 +248,7 @@ class KanbanBoard:
     def remove_item(self, item:KanbanItem)->None:
         """
         Remove an item in the kanbanboard, including all dependency lists.
+        
         :param item: The kanban item being removed
         """
         if item not in self.items:
@@ -204,9 +261,26 @@ class KanbanBoard:
             item_dx = i.depends_on.index(item)
             del i.depends_on[item_dx]
 
+    def trim_unused_categories(self)->Set[str]:
+        """
+        Remove categories that don't appear in any items.
+        
+        :returns: A list of removed categories.
+        """
+        seen = set()
+        for i in self.items:
+            seen = seen.union(i.category)
+        not_used = self.categories.difference(seen)
+        for i in not_used:
+            if i in self.category_data.keys():
+                del self.category_data[i]
+            self.categories.remove(i)
+        return not_used
+
     def save(self, filename:str)->None:
         """
         Save the kanban board to a file
+        
         :param filename: The file that will be dumped to
         """
         if filename is not None:
@@ -217,6 +291,14 @@ class KanbanBoard:
             pickle.dump(self,f)
 
     def _fix_missing(self)->None:
+        """
+        This ended up being necessary to get categories working 
+        in older save files. This may continue to be necessary, or it may 
+        not.
+
+        In either case, it provides some way of enabling new features on
+        old saves, so that's quite nice.
+        """
         if not hasattr(self,'categories'):
             self.categories=set()
             self.category_data=dict()
@@ -225,6 +307,7 @@ class KanbanBoard:
     def load(filename:str)->KanbanBoard:
         """
         Load a kanbanboard from a file
+        
         :param filename: The filename to load the kanban board from
         """
         with open(filename,'rb') as f:

@@ -156,6 +156,8 @@ class KanbanWidget(QFrame):
         Handle the editing dialog being closed, if it's accepted
         then it must also update the widget displays and emit a
         'changed' signal
+
+        :param code: The way that this dialog finished, Accepted, Rejected, etc
         """
         if code==QDialog.Accepted:
             self.updateDisplay()

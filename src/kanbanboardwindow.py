@@ -134,6 +134,7 @@ class KanbanBoardWidget(QFrame):
     def selectColumn(self, state: ItemState)->LabeledColumn:
         """
         Obtain the appropriate column for a widget to end up in given its item state
+        
         :param state: The state of the kanbanitem the widget contains
         """
         selection = self.availableColumn
@@ -157,6 +158,7 @@ class KanbanBoardWidget(QFrame):
         """
         Handle the aftermath of a kanbanwidget's update, move it to the 
         correct column, place it in the correct spot in the column, etc
+        
         :param widget: The widget being changd
         :param fromState: The previous state of the widget
         :param toState: The new state of the widget
