@@ -176,7 +176,7 @@ class KanbanBoardWidget(QFrame):
                     self.widgetChange(i, ItemState.BLOCKED, i.item.state())
 
     def openNewItem(self, k: KanbanItem)->None:
-        dialog = KanbanItemDialog(self, None, self.board)
+        dialog = KanbanItemDialog(self, None, kbb=self.board)
         dialog.NewItem.connect(self.addKanbanItem)
         dialog.show()
 

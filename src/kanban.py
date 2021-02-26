@@ -119,7 +119,8 @@ class KanbanItem:
             print(f"Not adding category to board {category}")
 
     def remove_category(self,category:str)->None:
-        self.category.remove(category)
+        if category in self.category:
+            self.category.remove(category)
 
     def update_category(self,category:str,state:bool)->None:
         if state:

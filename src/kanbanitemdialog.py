@@ -95,7 +95,7 @@ class KanbanItemDialog(QDialog):
         super(KanbanItemDialog, self).__init__(parent)
         self.addAtEnd = kbI is None
         self.item = kbI if kbI is not None else KanbanItem(
-            "", "", Priority.MEDIUM, kbb)
+            "", "", kbb, Priority.MEDIUM,)
         self.board = kbb
         self.category_changeset = None
         layout = QFormLayout()
@@ -196,7 +196,6 @@ class KanbanItemDialog(QDialog):
         if self.category_changeset is not None:
             for cat,val in self.category_changeset.items():
                 item.update_category(cat,val)
-        print(item.category)
 
         self.accept()
 
@@ -211,6 +210,7 @@ class KanbanItemDialog(QDialog):
         item = QListWidgetItem(thing.short_name(), self.dependencyList)
         item.setText(thing.short_name())
         item.setData(32, thing)
+        item.setCheckedState(Qt.Checked if item.completed else Qt.Unchecked)
 
     def populateDependsOn(self)->None:
         """
