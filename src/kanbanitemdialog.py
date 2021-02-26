@@ -172,7 +172,8 @@ class KanbanItemDialog(QDialog):
 
         layout.addWidget(container)
 
-
+        self.setWindowModality(Qt.NonModal)
+        self.setModal(False)
         self.updateFromItem()
 
     def updateItem(self)->None:
@@ -220,6 +221,7 @@ class KanbanItemDialog(QDialog):
         for i in self.item.depends_on:
             item = QListWidgetItem(i.short_name())
             item.setData(32, i)
+            item.setCheckState(Qt.Checked if i.completed else Qt.Unchecked)
             self.dependencyList.addItem(item)
 
         if self.board is None:
@@ -231,7 +233,6 @@ class KanbanItemDialog(QDialog):
                 continue
             if self.item in i.depends_on:
                 continue
-
             self.dependsOnCombo.addItem(i.short_name(), i)
 
     def dependency_selector_changed_index(self, _)->None:

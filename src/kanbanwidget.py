@@ -149,7 +149,7 @@ class KanbanWidget(QFrame):
         self.priorState=self.item.state()
         self.dialog = KanbanItemDialog(self,self.item,self.item.board)
         self.dialog.finished.connect(self.finishDialog)
-        self.dialog.open()
+        self.dialog.show()
 
     def finishDialog(self,code):
         """

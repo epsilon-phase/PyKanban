@@ -44,7 +44,10 @@ class LabeledColumn(QScrollArea):
                                   )
         self.widgetPanel.setVisible(not self.widgetPanel.isVisible())
 
-    def sort_widgets(self):
+    def sort_widgets(self)->None:
+        """
+        Sort the kanbanwidgets by priority.
+        """
         #At some point it would be a *very* good idea to rewrite this
         #so that it isn't O(n+nlog(n) complexity)
         widg = []
@@ -147,6 +150,9 @@ class KanbanBoardWidget(QFrame):
 
     def widgetChange(self, widget: QWidget, fromState: ItemState, toState: ItemState)->None:
         if fromState == toState:
+            #Although the item may not have changed column,
+            #the column may still need reordering
+            self.selectColumn(fromState).sort_widgets()
             return
         self.removeFrom(widget, fromState)
         self.addTo(widget, toState)
@@ -160,7 +166,7 @@ class KanbanBoardWidget(QFrame):
     def openNewItem(self, k: KanbanItem)->None:
         dialog = KanbanItemDialog(self, None, self.board)
         dialog.NewItem.connect(self.addKanbanItem)
-        dialog.open()
+        dialog.show()
 
     def openCategoryEditor(self)->None:
         c = CategoryEditor(self.board,self)
