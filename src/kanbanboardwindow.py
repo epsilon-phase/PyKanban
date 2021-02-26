@@ -62,6 +62,11 @@ class LabeledColumn(QScrollArea):
             self.widgetArea.addWidget(i)
 
     def addWidget(self, widget: QWidget)->None:
+        """
+        Add a widget to the area under the label in the column.
+
+        :param widget: The widget to add
+        """
         self.widgetArea.addWidget(widget)
         self.sort_widgets()
 
@@ -149,6 +154,13 @@ class KanbanBoardWidget(QFrame):
         self.selectColumn(state).addWidget(widget)
 
     def widgetChange(self, widget: QWidget, fromState: ItemState, toState: ItemState)->None:
+        """
+        Handle the aftermath of a kanbanwidget's update, move it to the 
+        correct column, place it in the correct spot in the column, etc
+        :param widget: The widget being changd
+        :param fromState: The previous state of the widget
+        :param toState: The new state of the widget
+        """
         if fromState == toState:
             #Although the item may not have changed column,
             #the column may still need reordering
