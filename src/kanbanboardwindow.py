@@ -125,6 +125,8 @@ class KanbanBoardWidget(QFrame):
         widg = KanbanWidget(self, k)
         self.kanbanWidgets.append(widg)
         self.selectColumn(state).addWidget(widg)
+        widg.updateDisplay()
+        print(k.category)
         widg.changed.connect(self.widgetChange)
         self.setWindowModified(True)
         parent = self.window()
@@ -192,7 +194,12 @@ class KanbanBoardWidget(QFrame):
     def openCategoryEditor(self)->None:
         c = CategoryEditor(self.board,self)
         c.show()
+        c.finished.connect(self.updateCategories)
 
+    def updateCategories(self)->None:
+        for i in self.kanbanWidgets:
+            if len(i.item.category)>0:
+                i.updateDisplay()
 
     def newBoard(self, board: KanbanBoard)->None:
         for i in self.kanbanWidgets:

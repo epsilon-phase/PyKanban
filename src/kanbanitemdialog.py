@@ -200,6 +200,8 @@ class KanbanItemDialog(QDialog):
         """
         Update the KanbanItem from the widget values
         """
+        if self.hasChanged():
+            self.window().setWindowModified(True)
         item = self.item
         item.name = self.nameEdit.text()
         item.description = self.descEdit.toPlainText()
@@ -210,15 +212,15 @@ class KanbanItemDialog(QDialog):
             item.depends_on.append(self.dependencyList.item(i).data(32))
         from PySide2.QtCore import Qt
         item.completed = self.completed.checkState() == Qt.Checked
+
+        if self.category_changeset is not None:
+            print(self.category_changeset)
+            item.category.clear()
+            for cat,val in self.category_changeset.items():
+                item.update_category(cat,val)
         if self.addAtEnd:
             self.board.add_item(item)
             self.NewItem.emit(item)
-        item.category.clear()
-        if self.category_changeset is not None:
-            for cat,val in self.category_changeset.items():
-                item.update_category(cat,val)
-        if self.hasChanged():
-            self.window().setWindowModified(True)
         self.accept()
 
     def add_dependsOn(self)->None:
