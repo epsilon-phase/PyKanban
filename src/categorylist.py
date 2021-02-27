@@ -18,6 +18,7 @@ class CategoryEditor(QDialog):
         self.grd = QGridLayout()
 
         self.listView = QListWidget()
+        self.listView.setSelectionMode(QListView.SingleSelection)
         self.grd.addWidget(self.listView,1,0,2,1)
         self.listView.itemSelectionChanged.connect(self.enable_disable_buttons)
         self.setLayout(self.grd)

@@ -203,9 +203,17 @@ class KanbanItem:
 
 
 class KanbanBoard:
+    """
+    A container that keeps track of a set of KanbanItems and their categories
+    """
+    #: The list of tasks in the board
     items: List[KanbanItem]
+    #: The place where, by default, this will be saved to
     filename: str
+    #: A set of categories that exist in the items of the board
     categories: Set[str]
+    #: Association between the category and the optional styling data that
+    #: may be associated to it.
     category_data: Dict[str,CategoryData]
 
     def __init__(self):

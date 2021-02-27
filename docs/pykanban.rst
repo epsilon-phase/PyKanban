@@ -1,7 +1,7 @@
-main module
+pykanban module
 ===========
 
-.. automodule:: main
+.. automodule:: pykanban
    :members:
    :undoc-members:
    :show-inheritance:

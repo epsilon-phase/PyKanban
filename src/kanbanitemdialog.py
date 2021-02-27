@@ -97,6 +97,7 @@ class KanbanItemDialog(QDialog):
     def __init__(self, parent=None, kbI: KanbanItem = None, kbb: KanbanBoard = None):
         """
         Create a new KanbanItemDialog
+
         :param parent: The parent widget
         :param kbI: The KanbanItem(Not modified )
         :param kbb: The KanbanBoard that will draw data from
@@ -110,7 +111,7 @@ class KanbanItemDialog(QDialog):
         self.category_changeset = None
         layout = QFormLayout()
 
-        self.setWindowTitle(self.tr("Editing: ")+(self.item.name if self.item.name !='' else "New Item"))
+        self.setWindowTitle(self.tr("Editing: ")+(self.item.name if self.item.name !='' else self.tr("New Item")))
 
 
         self.nameEdit = QLineEdit("")
@@ -151,6 +152,7 @@ class KanbanItemDialog(QDialog):
         grdLayout.addWidget(self.remove_dependency_button, 1, 1, 1, 1)
 
         self.dependencyList = QListWidget()
+        self.dependencyList.setSelectionMode(QListWidget.SingleSelection)
         self.dependencyList.itemSelectionChanged.connect(
             self.updateSelectedList)
         self.dependencyList.setAlternatingRowColors(True)
@@ -205,6 +207,7 @@ class KanbanItemDialog(QDialog):
         if self.addAtEnd:
             self.board.add_item(item)
             self.NewItem.emit(item)
+        item.category.clear()
         if self.category_changeset is not None:
             for cat,val in self.category_changeset.items():
                 item.update_category(cat,val)
