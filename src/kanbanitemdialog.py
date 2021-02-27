@@ -5,6 +5,8 @@ from typing import *
 
 class CategorySelectDialog(QDialog):
     categories_selected = Signal(dict)
+    categoryInput:QLineEdit
+    categorySelector:QListWidget
     def __init__(self,k:KanbanItem,parent:QWidget=None):
         super(CategorySelectDialog,self).__init__(parent)
         self.item=k
@@ -137,10 +139,12 @@ class KanbanItemDialog(QDialog):
         grdLayout.addWidget(self.dependsOnCombo, 0, 0, 1, 1)
 
         self.add_dependency_button = QPushButton("+")
+        self.add_dependency_button.setToolTip(self.tr("Add dependency"))
         grdLayout.addWidget(self.add_dependency_button, 0, 1, 1, 1)
         self.add_dependency_button.clicked.connect(self.add_dependsOn)
 
         self.remove_dependency_button = QPushButton("-")
+        self.remove_dependency_button.setToolTip(self.tr("Remove dependency"))
         self.remove_dependency_button.setEnabled(False)
         self.remove_dependency_button.clicked.connect(
             self.remove_button_clicked)

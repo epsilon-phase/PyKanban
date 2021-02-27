@@ -19,6 +19,7 @@ class CategoryEditor(QDialog):
 
         self.listView = QListWidget()
         self.grd.addWidget(self.listView,1,0,2,1)
+        self.listView.itemSelectionChanged.connect(self.enable_disable_buttons)
         self.setLayout(self.grd)
 
         self.categoryInput=QLineEdit()
@@ -37,13 +38,16 @@ class CategoryEditor(QDialog):
         self.editbackground.clicked.connect(self.editCategoryBackground)
         self.grd.addWidget(self.editbackground,2,1,1,1)
 
+
         clearforeground = QPushButton(self.tr("Clear Foreground Color"))
         clearforeground.clicked.connect(self.clearForeground)
         self.grd.addWidget(clearforeground,1,2,1,1)
+        self.clearforeground_button = clearforeground
 
         clearbackground = QPushButton(self.tr("Clear Background Color"))
         clearbackground.clicked.connect(self.clearBackground)
         self.grd.addWidget(clearbackground,2,2,1,1)
+        self.clearbackground_button = clearbackground
 
 
         self.finished.connect(self.updateBoard)
@@ -57,6 +61,23 @@ class CategoryEditor(QDialog):
         self.grd.addWidget(rejectButton,3,1,1,1)
 
         self.populate()
+
+    def enable_disable_buttons(self):
+        enabled = len(self.listView.selectedItems())>0
+        self.clearforeground_button.setEnabled(enabled)
+        self.clearbackground_button.setEnabled(enabled)
+        self.editbackground.setEnabled(enabled)
+        self.editforeground.setEnabled(enabled)
+
+        if enabled:
+            item = self.listView.selectedItems()[0]
+            data = item.data(32)
+            if data is not None:
+                self.clearforeground_button.setEnabled(data.foreground is not None)
+                self.clearbackground_button.setEnabled(data.background is not None)
+            else:
+                self.clearforeground_button.setEnabled(False)
+                self.clearbackground_button.setEnabled(False)
 
 
     def populate(self)->None:
@@ -93,6 +114,7 @@ class CategoryEditor(QDialog):
             return
         self.listView.addItem(self.categoryInput.text())
         self.categoryInput.setText("")
+
 
 
     def editCategoryForeground(self)->None:

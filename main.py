@@ -15,10 +15,13 @@ if __name__ == '__main__':
     defaults.initialize_to_defaults()
     kbb = kanban.KanbanBoard()
     if bool(settings.value(settingNames.OPEN_LAST_USED_DOCUMENT)):
-        val=settings.value(settingNames.LAST_DOCUMENT_USED)
+        val = settings.value(settingNames.LAST_DOCUMENT_USED)
         print(f"Found last document of {val}")
-        if val is not None:
-            kbb=kanban.KanbanBoard.load(val)
+        try:
+            if val is not None:
+                kbb = kanban.KanbanBoard.load(val)
+        except FileNotFoundError:
+            pass
 
 
     henlo=KanbanBoardWindow(kbb)
