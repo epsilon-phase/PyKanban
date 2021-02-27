@@ -201,7 +201,7 @@ class KanbanItemDialog(QDialog):
         Update the KanbanItem from the widget values
         """
         if self.hasChanged():
-            self.window().setWindowModified(True)
+            self.parent().window().setWindowModified(True)
         item = self.item
         item.name = self.nameEdit.text()
         item.description = self.descEdit.toPlainText()

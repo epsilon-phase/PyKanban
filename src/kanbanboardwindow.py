@@ -1,13 +1,12 @@
 from __future__ import annotations
 from PySide2.QtWidgets import *
-from PySide2.QtCore import QCoreApplication, Qt, Slot, QSettings
+from PySide2.QtCore import Qt, QSettings, QTimer
 from PySide2.QtGui import QKeySequence,QCloseEvent
 from src.kanban import *
 from src.kanbanwidget import KanbanWidget
 from src.kanbanitemdialog import KanbanItemDialog
 from src.categorylist import CategoryEditor
 from typing import *
-from PySide2.QtCore import QTimer
 
 class LabeledColumn(QScrollArea):
     label: QLabel
