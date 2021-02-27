@@ -190,6 +190,12 @@ class KanbanItemDialog(QDialog):
         self.setModal(False)
         self.updateFromItem()
 
+    def hasChanged(self)->bool:
+        i = self.item
+        return i.name!= self.nameEdit.text() \
+               or i.description!= self.descEdit.toPlainText() \
+               or self.addAtEnd \
+               or i.completed != (self.completed.checkState()==Qt.Checked)
     def updateItem(self)->None:
         """
         Update the KanbanItem from the widget values
@@ -211,7 +217,8 @@ class KanbanItemDialog(QDialog):
         if self.category_changeset is not None:
             for cat,val in self.category_changeset.items():
                 item.update_category(cat,val)
-
+        if self.hasChanged():
+            self.window().setWindowModified(True)
         self.accept()
 
     def add_dependsOn(self)->None:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 from PySide2.QtWidgets import *
 from PySide2.QtCore import QCoreApplication, Qt, Slot, QSettings
-from PySide2.QtGui import QKeySequence
+from PySide2.QtGui import QKeySequence,QCloseEvent
 from src.kanban import *
 from src.kanbanwidget import KanbanWidget
 from src.kanbanitemdialog import KanbanItemDialog
@@ -122,10 +122,14 @@ class KanbanBoardWidget(QFrame):
 
     def addKanbanItem(self, k: KanbanItem)->None:
         state = k.state()
-        widg = KanbanWidget(None, k)
+        widg = KanbanWidget(self, k)
         self.kanbanWidgets.append(widg)
         self.selectColumn(state).addWidget(widg)
         widg.changed.connect(self.widgetChange)
+        self.setWindowModified(True)
+        parent = self.window()
+        if parent is not None:
+            parent.setWindowModified(True)
 
     def populate(self)->None:
         for i in self.board.items:
@@ -163,6 +167,7 @@ class KanbanBoardWidget(QFrame):
         :param fromState: The previous state of the widget
         :param toState: The new state of the widget
         """
+
         if fromState == toState:
             #Although the item may not have changed column,
             #the column may still need reordering
@@ -170,12 +175,14 @@ class KanbanBoardWidget(QFrame):
             return
         self.removeFrom(widget, fromState)
         self.addTo(widget, toState)
+
         if toState == ItemState.COMPLETED:
             # AT some point it would be wise to accelerate this search somewhat, since it's linear time
             # Ofc, this is probably more than enough for most things :)
             for i in self.kanbanWidgets:
                 if widget.item in i.item.depends_on:
                     self.widgetChange(i, ItemState.BLOCKED, i.item.state())
+
 
     def openNewItem(self, k: KanbanItem)->None:
         dialog = KanbanItemDialog(self, None, kbb=self.board)
@@ -203,6 +210,7 @@ class KanbanBoardWindow(QMainWindow):
         super(KanbanBoardWindow, self).__init__()
         
         self.kanban = KanbanBoardWidget(kb)
+        self.kanban.setParent(self)
         self.setCentralWidget(self.kanban)
 
         mb = self.menuBar()
@@ -231,6 +239,7 @@ class KanbanBoardWindow(QMainWindow):
         search_shortcut = QShortcut(QKeySequence("Ctrl+F"),self)
         search_shortcut.activated.connect(self.selectSearchBar)
 
+        # self.setWindowModified(True)
         self.updateTitle()
 
     def updateTitle(self):
@@ -240,6 +249,7 @@ class KanbanBoardWindow(QMainWindow):
         title = self.tr("Pykanban")
         if self.kanban.board.filename is not None:
             title+=f": {self.kanban.board.filename}"
+        title += '[*]'
         self.setWindowTitle(title)
 
     def selectSearchBar(self):
@@ -265,6 +275,7 @@ class KanbanBoardWindow(QMainWindow):
         settings=QSettings()
         settings.setValue(LAST_DOCUMENT_USED,filename)
         self.kanban.board.save(filename)
+        self.setWindowModified(False)
         self.updateTitle()
 
 
@@ -293,3 +304,12 @@ class KanbanBoardWindow(QMainWindow):
     def newBoard(self):
         kb = KanbanBoard()
         self.kanban.newBoard(kb)
+
+    def closeEvent(self, event:QCloseEvent)->None:
+        if self.isWindowModified():
+            print("Modified!")
+            wants_save = QMessageBox.question(self, "Save", self.tr("Do you want to save?"),
+                QMessageBox.Yes | QMessageBox.No)
+            if wants_save == QMessageBox.Yes:
+                self.openSave()
+        event.accept()
