@@ -7,7 +7,7 @@ from src.kanbanwidget import KanbanWidget
 from src.kanbanitemdialog import KanbanItemDialog
 from src.categorylist import CategoryEditor
 from typing import *
-
+from PySide2.QtCore import QTimer
 
 class LabeledColumn(QScrollArea):
     label: QLabel
@@ -239,6 +239,10 @@ class KanbanBoardWindow(QMainWindow):
         search_shortcut = QShortcut(QKeySequence("Ctrl+F"),self)
         search_shortcut.activated.connect(self.selectSearchBar)
 
+        self.autosave_timer = QTimer(self)
+        self.autosave_timer.setInterval(1000*int(QSettings().value("Recovery/Interval")))
+        self.autosave_timer.timeout.connect(self.autosave)
+        self.autosave_timer.start()
         # self.setWindowModified(True)
         self.updateTitle()
 
@@ -249,10 +253,16 @@ class KanbanBoardWindow(QMainWindow):
         title = self.tr("Pykanban")
         if self.kanban.board.filename is not None:
             title+=f": {self.kanban.board.filename}"
+        else:
+            title+=": Unsaved Document"
         title += '[*]'
         self.setWindowTitle(title)
 
     def selectSearchBar(self):
+        if self.kanban.searchText.hasFocus():
+            if self.kanban.searchText.selectionLength()>0:
+                self.kanban.searchText.setText("")
+            self.kanban.searchText.selectAll()
         self.kanban.searchText.setFocus(Qt.ShortcutFocusReason)
 
     def getSaveFilename(self)->str:
@@ -278,6 +288,16 @@ class KanbanBoardWindow(QMainWindow):
         self.setWindowModified(False)
         self.updateTitle()
 
+    def autosave(self):
+        """
+        Save the document if the document has changed and autosaving is enabled
+        """
+        print("Autosave :D")
+        if self.isWindowModified() and bool(QSettings().value("Recovery/autosave")):
+            if self.board.filename is not None:
+                self.board.save()
+                print("Autosaved :)")
+                self.setWindowModified(False)
 
     def openSaveAs(self):
         from src.settingNames import LAST_DOCUMENT_USED

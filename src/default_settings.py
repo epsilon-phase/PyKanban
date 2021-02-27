@@ -10,6 +10,10 @@ _defaults_ = {
     },
     "UseRecord":{
         "LastDocument":None
+    },
+    "Recovery":{
+        "AutoSave":True,
+        "Interval":120
     }
 }
 

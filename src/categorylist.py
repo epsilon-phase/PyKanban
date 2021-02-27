@@ -119,8 +119,6 @@ class CategoryEditor(QDialog):
 
 
     def editCategoryForeground(self)->None:
-        if not self.listView.isItemSelected():
-            return
         item = self.listView.selectedItems()[0]
         data = item.data(32)
         initialColor=None
@@ -139,7 +137,7 @@ class CategoryEditor(QDialog):
             print("Got invalid color :(")
 
     def clearForeground(self):
-        if not self.listView.isItemSelected():
+        if 0==len(self.listView.selectedItems()):
             return
         item = self.listView.selectedItems()[0]
         item.data(32).foreground=None
@@ -153,8 +151,7 @@ class CategoryEditor(QDialog):
         item.setBackground(QBrush())
 
     def editCategoryBackground(self)->None:
-        if not self.listView.isItemSelected():
-            return
+
         item = self.listView.selectedItems()[0]
         initialColor=None
         data = item.data(32)
