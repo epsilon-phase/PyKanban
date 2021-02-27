@@ -1,9 +1,7 @@
 from src.kanban import KanbanItem, Priority, KanbanBoard
 from PySide2.QtWidgets import *
-from PySide2.QtCore import QCoreApplication, Signal, Qt
+from PySide2.QtCore import Signal, Qt
 from typing import *
-
-translate = QCoreApplication.translate
 
 class CategorySelectDialog(QDialog):
     categories_selected = Signal(dict)
@@ -40,6 +38,10 @@ class CategorySelectDialog(QDialog):
         self.populate()
 
     def populate(self):
+        """
+        Grab the categories that exist and add them to the listviewwidget,
+        checking them if they are in the current object's set
+        """
         for i in self.item.board.categories:
             item = QListWidgetItem(i,self.categorySelector)
             item.setCheckState(Qt.Checked if i in self.item.category else Qt.Unchecked)
@@ -68,7 +70,11 @@ class CategorySelectDialog(QDialog):
 class KanbanItemDialog(QDialog):
     item: KanbanItem
     board: KanbanBoard
+    #: Whether or not the dialog will append the new item to the board when 
+    #: it is finished
     addAtEnd: bool
+    #: Passes on the information that a new item was created by the dialog,
+    #: probably indicating that the other UI needs updating to reflect that
     NewItem: Signal = Signal(KanbanItem)
 
     def updateFromItem(self)->None:

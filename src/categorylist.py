@@ -1,7 +1,15 @@
 from PySide2.QtWidgets import *
-from PySide2.QtGui import QColor
+from PySide2.QtGui import QBrush
+from PySide2.QtCore import Qt
 from src.kanban import *
+from src.taskcategory import CategoryData
+
 class CategoryEditor(QDialog):
+    """
+    List and edit categories in the current kanbanboard.
+
+    Currently permits associating the category with a color.
+    """
     board:KanbanBoard
 
     def __init__(self, board:KanbanBoard, parent:QWidget=None):
@@ -10,7 +18,7 @@ class CategoryEditor(QDialog):
         self.grd = QGridLayout()
 
         self.listView = QListWidget()
-        self.grd.addWidget(self.listView,1,0,1,1)
+        self.grd.addWidget(self.listView,1,0,2,1)
         self.setLayout(self.grd)
 
         self.categoryInput=QLineEdit()
@@ -21,18 +29,32 @@ class CategoryEditor(QDialog):
         self.grd.addWidget(addCategory,0,1,1,1)
 
 
-        self.editbutton = QPushButton(self.tr("Edit category"))
-        self.editbutton.clicked.connect(self.editCategory)
-        self.grd.addWidget(self.editbutton,1,1,1,1)
+        self.editforeground = QPushButton(self.tr("Edit Foreground Color"))
+        self.editforeground.clicked.connect(self.editCategoryForeground)
+        self.grd.addWidget(self.editforeground,1,1,1,1)
+
+        self.editbackground = QPushButton(self.tr("Edit Background Color"))
+        self.editbackground.clicked.connect(self.editCategoryBackground)
+        self.grd.addWidget(self.editbackground,2,1,1,1)
+
+        clearforeground = QPushButton(self.tr("Clear Foreground Color"))
+        clearforeground.clicked.connect(self.clearForeground)
+        self.grd.addWidget(clearforeground,1,2,1,1)
+
+        clearbackground = QPushButton(self.tr("Clear Background Color"))
+        clearbackground.clicked.connect(self.clearBackground)
+        self.grd.addWidget(clearbackground,2,2,1,1)
+
+
         self.finished.connect(self.updateBoard)
 
         acceptButton = QPushButton(self.tr("Accept"))
         acceptButton.clicked.connect(self.accept)
-        self.grd.addWidget(acceptButton,2,0,1,1)
+        self.grd.addWidget(acceptButton,3,0,1,1)
 
         rejectButton = QPushButton(self.tr("Cancel"))
         rejectButton.clicked.connect(self.reject)
-        self.grd.addWidget(rejectButton,2,1,1,1)
+        self.grd.addWidget(rejectButton,3,1,1,1)
 
         self.populate()
 
@@ -43,14 +65,20 @@ class CategoryEditor(QDialog):
         and set their textcolors to reflect the category colors
         if assigned
         """
+        from copy import copy
         print(self.board.categories)
         for i in self.board.categories:
             print(f"Found category {i}")
             item = QListWidgetItem(i,self.listView)
             if i in self.board.category_data.keys():
-                color = self.board.category_data[i]
-                item.setTextColor(color)
-                item.setData(32,color)
+                data = copy(self.board.category_data[i])
+                brush = QBrush()
+                if data.foreground is not None:
+                    item.setTextColor(data.foreground)
+                if data.background is not None:
+                    brush.setColor(data.background)
+                    item.setBackground(brush)
+                item.setData(32,data)
 
     def addCategory(self)->None:
         """
@@ -66,16 +94,46 @@ class CategoryEditor(QDialog):
         self.categoryInput.setText("")
 
 
-    def editCategory(self)->None:
+    def editCategoryForeground(self)->None:
         item = self.listView.selectedItems()[0]
         color = QColorDialog.getColor()
         if color.isValid():
             print(f"Got valid color {color.red()}, {color.green()},{color.blue()}")
             item.setTextColor(color)
-            item.setData(32,color)
+            data = item.data(32)
+            if data is None:
+                data = CategoryData(color,None)
+            data.foreground=color
+            item.setData(32,data)
         else:
             print("Got invalid color :(")
-        
+
+    def clearForeground(self):
+        item = self.listView.selectedItems()[0]
+        item.data(32).foreground=None
+        item.setTextColor(self.palette().text().color())
+
+    def clearBackground(self):
+        item = self.listView.selectedItems()[0]
+        item.data(32).background = None
+        item.setBackground(QBrush())
+
+    def editCategoryBackground(self)->None:
+        item = self.listView.selectedItems()[0]
+        color = QColorDialog.getColor()
+        if color.isValid():
+            print(f"Got valid color {color.red()}, {color.green()},{color.blue()}")
+            brush:QBrush = QBrush()
+            brush.setColor(color)
+            brush.setStyle(Qt.SolidPattern)
+            data = item.data(32)
+            if data is None:
+                data = CategoryData(None, color)
+            data.background=color
+            item.setData(32,data)
+            item.setBackground(brush)
+        else:
+            print("Got invalid color :(")
 
     def updateBoard(self,code:int)->None:
         """
@@ -91,13 +149,17 @@ class CategoryEditor(QDialog):
         for i in range(self.listView.count()):
             i = self.listView.item(i)
             name = i.text()
-            color = i.data(32)
+            data = i.data(32)
             print("Category: "+name)
 
             if name not in self.board.categories:
                 self.board.categories.add(name)
                 print(f"Adding new category {name}")
-            if color is None:
+            if data is None:
                 continue
-            self.board.category_data[name]=color
+            #Clean up unassociated color data.
+            if data.foreground is None and data.background is None:
+                del self.board.category_data[name]
+            else:
+                self.board.category_data[name]=data
         

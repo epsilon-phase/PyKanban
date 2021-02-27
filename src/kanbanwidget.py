@@ -136,10 +136,18 @@ class KanbanWidget(QFrame):
                     category=i
                     break
             if category in self.item.board.category_data.keys():
-                color:QColor = self.item.board.category_data[category]
-                print(color)
-                print(f"color: rgb({color.red()},{color.green()},{color.blue()})")
-                self.name.setStyleSheet(f"color: rgb({color.red()},{color.green()},{color.blue()})")
+                data = self.item.board.category_data[category]
+                if data.foreground is not None:
+                    foreground:QColor = data.foreground
+                    print(foreground)
+                    print(f"color: rgb({foreground.red()},{foreground.green()},{foreground.blue()})")
+                    self.name.setStyleSheet(f"color: rgb({foreground.red()},{foreground.green()},{foreground.blue()})")
+                else:
+                    self.name.setStyleSheet("")
+                if data.background is not None:
+                    background = data.background
+                    self.setStyleSheet(f"background: rgb({background.red()},{background.green()},{background.blue()})")
+
         self.updateGeometry()
 
     def openEditingDialog(self)->None:
@@ -147,7 +155,11 @@ class KanbanWidget(QFrame):
         Handle opening the editing dialog
         """
         self.priorState=self.item.state()
-        self.dialog = KanbanItemDialog(self,self.item,self.item.board)
+        #The reason we don't use this widget as the parent is because it causes
+        #the dialog to adopt the background styling it currently has.
+        #It honestly looks kinda nice, and might be worth doing, 
+        #but for now it's a bug
+        self.dialog = KanbanItemDialog(self.parent(),self.item,self.item.board)
         self.dialog.finished.connect(self.finishDialog)
         self.dialog.show()
 

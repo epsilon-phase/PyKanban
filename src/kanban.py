@@ -32,7 +32,7 @@ class KanbanItem:
     depends_on:List[KanbanItem]
     #: The name of the task
     name:str
-    #: The tasks' priority
+    #: The task's priority
     priority:Priority
     #: The description of a task
     description:str
@@ -206,7 +206,7 @@ class KanbanBoard:
     items: List[KanbanItem]
     filename: str
     categories: Set[str]
-    category_data: Dict[str,Any]
+    category_data: Dict[str,CategoryData]
 
     def __init__(self):
         self.items=[]
@@ -299,9 +299,14 @@ class KanbanBoard:
         In either case, it provides some way of enabling new features on
         old saves, so that's quite nice.
         """
+        from src.taskcategory import CategoryData
+        from PySide2.QtGui import QColor
         if not hasattr(self,'categories'):
             self.categories=set()
             self.category_data=dict()
+        for name,val in self.category_data.items():
+            if isinstance(val,QColor):
+                self.category_data[name]=CategoryData(val,None)
 
     @staticmethod
     def load(filename:str)->KanbanBoard:
