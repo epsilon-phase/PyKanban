@@ -73,6 +73,7 @@ class CategoryEditor(QDialog):
             if i in self.board.category_data.keys():
                 data = copy(self.board.category_data[i])
                 brush = QBrush()
+                brush.setStyle(Qt.SolidPattern)
                 if data.foreground is not None:
                     item.setTextColor(data.foreground)
                 if data.background is not None:
@@ -95,8 +96,14 @@ class CategoryEditor(QDialog):
 
 
     def editCategoryForeground(self)->None:
+        if not self.listView.isItemSelected():
+            return
         item = self.listView.selectedItems()[0]
-        color = QColorDialog.getColor()
+        data = item.data(32)
+        initialColor=None
+        if data is not None:
+            initialColor=data.foreground
+        color = QColorDialog.getColor(initial=initialColor)
         if color.isValid():
             print(f"Got valid color {color.red()}, {color.green()},{color.blue()}")
             item.setTextColor(color)
@@ -109,18 +116,28 @@ class CategoryEditor(QDialog):
             print("Got invalid color :(")
 
     def clearForeground(self):
+        if not self.listView.isItemSelected():
+            return
         item = self.listView.selectedItems()[0]
         item.data(32).foreground=None
         item.setTextColor(self.palette().text().color())
 
     def clearBackground(self):
+        if not self.listView.isItemSelected():
+            return
         item = self.listView.selectedItems()[0]
         item.data(32).background = None
         item.setBackground(QBrush())
 
     def editCategoryBackground(self)->None:
+        if not self.listView.isItemSelected():
+            return
         item = self.listView.selectedItems()[0]
-        color = QColorDialog.getColor()
+        initialColor=None
+        data = item.data(32)
+        if data is not None:
+            initialColor=data.background
+        color = QColorDialog.getColor(initial=initialColor)
         if color.isValid():
             print(f"Got valid color {color.red()}, {color.green()},{color.blue()}")
             brush:QBrush = QBrush()
