@@ -2,6 +2,8 @@
 
 A small kanban application written in python.
 
+To read how to use it, look at [Starting Out](docs/starting_out.rst)
+
 
 ## Features
 
