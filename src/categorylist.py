@@ -10,6 +10,7 @@ class CategoryEditor(QDialog):
 
     Currently permits associating the category with a color.
     """
+    #: The board populated from
     board:KanbanBoard
 
     def __init__(self, board:KanbanBoard, parent:QWidget=None):

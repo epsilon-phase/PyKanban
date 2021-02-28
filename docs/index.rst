@@ -10,6 +10,8 @@ Welcome to PyKanban's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+* :doc:`starting_out`
+
 
 
 Indices and tables
