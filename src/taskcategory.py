@@ -1,5 +1,5 @@
 from PySide2.QtGui import QColor
-
+from typing import Optional
 class CategoryData:
     """
     A small container class for handling the associated styling of a
@@ -7,9 +7,9 @@ class CategoryData:
     compared to a tuple of the same items.
     """
     #: The foreground(text) Color the widget should render with
-    foreground:QColor
+    foreground:Optional[QColor]
     #: The background color the widget should render with
-    background:QColor
+    background:Optional[QColor]
     __slots__=('foreground','background')
     
     def __init__(self, foreground:QColor=None, background:QColor=None):

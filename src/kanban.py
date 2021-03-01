@@ -275,7 +275,7 @@ class KanbanBoard:
         
         :returns: A list of removed categories.
         """
-        seen = set()
+        seen:Set[str] = set()
         for i in self.items:
             seen = seen.union(i.category)
         not_used = self.categories.difference(seen)

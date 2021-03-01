@@ -69,72 +69,36 @@ class LabeledColumn(QScrollArea):
         self.widgetArea.addWidget(widget)
         self.sort_widgets()
 
+class AbstractView():
+    def addKanbanItem(self,k:KanbanItem)->None:
+        pass
 
-class KanbanBoardWidget(QFrame):
+    def filterChanged(self,text:str)->None:
+        pass
+
+    def updateCategories(self)->None:
+        pass
+
+    def tabName(self)->str:
+        pass
+
+
+
+class StatusView(QFrame):
     kanbanWidgets: List[KanbanWidget]
-
-    def __init__(self, k: KanbanBoard):
-        super(KanbanBoardWidget, self).__init__()
-
+    def __init__(self, parent=None, board:KanbanBoard=None):
+        super(StatusView,self).__init__(None)
+        self.kanbanWidgets=[]
+        self.board=board
         self.mainlayout = QHBoxLayout()
-
-        mainpanel = QFrame()
-        mainpanel.setLayout(self.mainlayout)
-
-        utilityPanel = QFrame()
-        utilityLayout = QVBoxLayout()
-        utilityPanel.setLayout(utilityLayout)
-        
-        self.addItem = QPushButton(self.tr("Add new Item"))
-        self.addItem.clicked.connect(self.openNewItem)
-        utilityLayout.addWidget(self.addItem)
-
-        self.categoryButton = QPushButton(self.tr("Edit Categories"))
-        self.categoryButton.clicked.connect(self.openCategoryEditor)
-        utilityLayout.addWidget(self.categoryButton)
-
-        self.searchText= QLineEdit()
-        utilityLayout.addWidget(self.searchText)
-        self.searchText.textChanged.connect(self.filterChanged)
-
-
-
+        self.setLayout(self.mainlayout)
         self.availableColumn = LabeledColumn(self.tr("Available"))
         self.completedColumn = LabeledColumn(self.tr("Completed"))
         self.blockedColumn = LabeledColumn(self.tr("Blocked"))
         self.mainlayout.addWidget(self.availableColumn)
         self.mainlayout.addWidget(self.completedColumn)
         self.mainlayout.addWidget(self.blockedColumn)
-        # self.root = QFrame()
-        # self.root.setLayout(self.layout)
-        # self.setWidgetResizable(True)
-        self.board = k
-        self.kanbanWidgets = []
-        
-        splitter = QSplitter()
-        splitter.addWidget(utilityPanel)
-        splitter.addWidget(mainpanel)
-
-        self.setLayout(QHBoxLayout())
-        self.layout().addWidget(splitter)
         self.populate()
-
-    def addKanbanItem(self, k: KanbanItem)->None:
-        state = k.state()
-        widg = KanbanWidget(self, k)
-        self.kanbanWidgets.append(widg)
-        self.selectColumn(state).addWidget(widg)
-        widg.updateDisplay()
-        print(k.category)
-        widg.changed.connect(self.widgetChange)
-        self.setWindowModified(True)
-        parent = self.window()
-        if parent is not None:
-            parent.setWindowModified(True)
-
-    def populate(self)->None:
-        for i in self.board.items:
-            self.addKanbanItem(i)
 
     def selectColumn(self, state: ItemState)->LabeledColumn:
         """
@@ -149,9 +113,18 @@ class KanbanBoardWidget(QFrame):
             selection = self.blockedColumn
         return selection
 
-    def filterChanged(self):
-        query = self.searchText.text()
-        self.board.for_each_by_matching(lambda x,y:x.widget.setVisible(y),query)
+    def addKanbanItem(self, k: KanbanItem)->None:
+        state = k.state()
+        widg = KanbanWidget(self, k)
+        self.kanbanWidgets.append(widg)
+        self.selectColumn(state).addWidget(widg)
+        widg.updateDisplay()
+        print(k.category)
+        widg.changed.connect(self.widgetChange)
+        self.setWindowModified(True)
+        parent = self.window()
+        if parent is not None:
+            parent.setWindowModified(True)
 
     def removeFrom(self, widget: QWidget, state: ItemState)->None:
         self.layout().removeWidget(widget)
@@ -184,6 +157,84 @@ class KanbanBoardWidget(QFrame):
                 if widget.item in i.item.depends_on:
                     self.widgetChange(i, ItemState.BLOCKED, i.item.state())
 
+    def populate(self)->None:
+        for i in self.board.items:
+            self.addKanbanItem(i)
+
+    def filterChanged(self,text:str):
+        self.board.for_each_by_matching(lambda x,y:x.widget.setVisible(y),text)
+
+    def updateCategories(self)->None:
+        for i in self.kanbanWidgets:
+            if len(i.item.category)>0:
+                i.updateDisplay()
+
+    def newBoard(self, board: KanbanBoard)->None:
+
+        for i in self.kanbanWidgets:
+            self.layout().removeWidget(i)
+            i.deleteLater()
+        self.kanbanWidgets.clear()
+        self.board = board
+        self.populate()
+
+    def tabName(self)->str:
+        return self.tr("Status")
+
+class KanbanBoardWidget(QFrame):
+    kanbanWidgets: List[KanbanWidget]
+    views:List[AbstractView]
+
+    def __init__(self, k: KanbanBoard):
+        super(KanbanBoardWidget, self).__init__()
+
+        self.views = []
+        self.views.append(StatusView(self,k))
+
+        utilityPanel = QFrame()
+        utilityLayout = QVBoxLayout()
+        utilityPanel.setLayout(utilityLayout)
+        
+        self.addItem = QPushButton(self.tr("Add new Item"))
+        self.addItem.clicked.connect(self.openNewItem)
+        utilityLayout.addWidget(self.addItem)
+
+        self.categoryButton = QPushButton(self.tr("Edit Categories"))
+        self.categoryButton.clicked.connect(self.openCategoryEditor)
+        utilityLayout.addWidget(self.categoryButton)
+
+        self.searchText= QLineEdit()
+        utilityLayout.addWidget(self.searchText)
+        self.searchText.textChanged.connect(self.filterChanged)
+
+        self.board = k
+        self.kanbanWidgets = []
+        self.tab_container = QTabWidget()
+        for i in self.views:
+            self.tab_container.addTab(i,i.tabName())
+        
+        splitter = QSplitter()
+        splitter.addWidget(utilityPanel)
+        splitter.addWidget(self.tab_container)
+
+        self.setLayout(QHBoxLayout())
+        self.layout().addWidget(splitter)
+        self.populate()
+
+    def addKanbanItem(self, k: KanbanItem)->None:
+        for i in self.views:
+            i.addKanbanItem(k)
+
+
+    def populate(self)->None:
+        for i in self.board.items:
+            self.addKanbanItem(i)
+
+
+    def filterChanged(self):
+        query = self.searchText.text()
+        for i in self.views:
+            i.filterChanged(query)
 
     def openNewItem(self, k: KanbanItem)->None:
         dialog = KanbanItemDialog(self, None, kbb=self.board)
@@ -196,17 +247,13 @@ class KanbanBoardWidget(QFrame):
         c.finished.connect(self.updateCategories)
 
     def updateCategories(self)->None:
-        for i in self.kanbanWidgets:
-            if len(i.item.category)>0:
-                i.updateDisplay()
+        for i in self.views:
+            i.updateCategories()
 
     def newBoard(self, board: KanbanBoard)->None:
-        for i in self.kanbanWidgets:
-            self.layout().removeWidget(i)
-            i.deleteLater()
-        self.kanbanWidgets.clear()
-        self.board = board
-        self.populate()
+        for i in self.views:
+            i.newBoard(board)
+
 
 
 class KanbanBoardWindow(QMainWindow):
@@ -270,6 +317,7 @@ class KanbanBoardWindow(QMainWindow):
                 self.kanban.searchText.setText("")
             self.kanban.searchText.selectAll()
         self.kanban.searchText.setFocus(Qt.ShortcutFocusReason)
+        a
 
     def getSaveFilename(self)->str:
         thing = QFileDialog.getSaveFileName(filter="Kanban Boards (*.kb)")
