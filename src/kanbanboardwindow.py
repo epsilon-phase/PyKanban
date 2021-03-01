@@ -233,8 +233,9 @@ class KanbanBoardWidget(QFrame):
 
     def filterChanged(self):
         query = self.searchText.text()
-        for i in self.views:
-            i.filterChanged(query)
+        board.for_each_by_matching(lambda x,y: (x.setVisible(y) for i in x.widget),query)
+        # for i in self.views:
+            # i.filterChanged(query)
 
     def openNewItem(self, k: KanbanItem)->None:
         dialog = KanbanItemDialog(self, None, kbb=self.board)

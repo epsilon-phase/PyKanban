@@ -77,7 +77,8 @@ class KanbanWidget(QFrame):
         self.setSizePolicy(QSizePolicy(QSizePolicy.Preferred,QSizePolicy.MinimumExpanding))
         self.setFrameShape(QFrame.StyledPanel)
         self.item=kbi
-        self.item.widget=self
+        self.item.widget=self.item.widget if self.item.widget is not None else []
+        self.item.widget.append(self)
 
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignTop)

@@ -41,7 +41,7 @@ class KanbanItem:
     #: The parent board
     board:KanbanBoard
     #:The parent widget, will be None until initialized
-    widget: QWidget
+    widget: List[QWidget]
     #: The set of categories this task is under
     category: Set[str]
     __slots__=('completed','board','priority','name','depends_on','description','assigned','widget', 'category')
@@ -202,6 +202,7 @@ class KanbanItem:
             self.category=set(self.category)
 
 
+
 class KanbanBoard:
     """
     A container that keeps track of a set of KanbanItems and their categories
@@ -263,6 +264,10 @@ class KanbanBoard:
             return
         item_dx=self.items.index(item)
         del self.items[item_dx]
+        if item.widget is not None:
+            for i in item.widget:
+                i.parent().layout().removeWidget(i)
+                i.deleteLater()
         for i in self.items:
             if item not in i.depends_on:
                 continue

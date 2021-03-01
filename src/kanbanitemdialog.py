@@ -172,9 +172,12 @@ class KanbanItemDialog(QDialog):
 
         self.accept_button = QPushButton(self.tr("Accept"))
         self.cancel_button = QPushButton(self.tr("Cancel"))
+        self.delete_button = QPushButton(self.tr("Delete"))
         self.accept_button.clicked.connect(self.updateItem)
         self.accept_button.clicked.connect(self.accept)
         self.cancel_button.clicked.connect(self.reject)
+        self.delete_button.clicked.connect(self.deleteItem)
+        self.delete_button.clicked.connect(self.reject)
 
 
         container = QFrame()
@@ -182,6 +185,7 @@ class KanbanItemDialog(QDialog):
 
         hlayout.addWidget(self.accept_button)
         hlayout.addWidget(self.cancel_button)
+        hlayout.addWidget(self.delete_button)
         container.setLayout(hlayout)
 
         layout.addWidget(container)
@@ -189,6 +193,11 @@ class KanbanItemDialog(QDialog):
         self.setWindowModality(Qt.NonModal)
         self.setModal(False)
         self.updateFromItem()
+
+    def deleteItem(self)->None:
+        if self.addAtEnd:
+            return
+        self.board.remove_item(self.item)
 
     def hasChanged(self)->bool:
         i = self.item
