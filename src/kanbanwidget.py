@@ -77,7 +77,9 @@ class KanbanWidget(QFrame):
         self.setSizePolicy(QSizePolicy(QSizePolicy.Preferred,QSizePolicy.MinimumExpanding))
         self.setFrameShape(QFrame.StyledPanel)
         self.item=kbi
-        self.item.widget=self.item.widget if self.item.widget is not None else []
+        if self.item.widget is None:
+            self.item.widget=[]
+
         self.item.widget.append(self)
 
         layout = QVBoxLayout()
@@ -94,7 +96,6 @@ class KanbanWidget(QFrame):
         self.name.setAlignment(Qt.AlignTop|Qt.AlignLeft)
         layout.addWidget(self.name,alignment=Qt.AlignTop|Qt.AlignLeft)
         
-
         self.description = QTextEdit()
         self.description.setReadOnly(True)
         s=QSettings()
@@ -113,6 +114,7 @@ class KanbanWidget(QFrame):
         layout.addWidget(self.editButton)
 
         self.updateDisplay()
+
 
 
 
@@ -140,8 +142,6 @@ class KanbanWidget(QFrame):
                 data = self.item.board.category_data[category]
                 if data.foreground is not None:
                     foreground:QColor = data.foreground
-                    print(foreground)
-                    print(f"color: rgb({foreground.red()},{foreground.green()},{foreground.blue()})")
                     self.name.setStyleSheet(f"color: rgb({foreground.red()},{foreground.green()},{foreground.blue()})")
                 else:
                     self.name.setStyleSheet("")
@@ -155,6 +155,7 @@ class KanbanWidget(QFrame):
         """
         Handle opening the editing dialog
         """
+        print(f"Opening widget for {id(self)}")
         self.priorState=self.item.state()
         #The reason we don't use this widget as the parent is because it causes
         #the dialog to adopt the background styling it currently has.

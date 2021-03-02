@@ -245,6 +245,15 @@ class KanbanBoard:
             matches.append(i)
         return matches
 
+    def dependents_of(self,item:KanbanItem)->List[KanbanItem]:
+        """
+        Returns the items that depend on the given item directly
+        
+        :param item: The item that is depended on.
+        :returns: A list of items that depend on item
+        """
+        return list(filter(lambda x:item in x.depends_on,self.items))
+
     def add_item(self,item:KanbanItem)->None:
         """
         Add an item to the kanbanboard, setting its parent slot to the board
@@ -320,6 +329,14 @@ class KanbanBoard:
         for name,val in self.category_data.items():
             if isinstance(val,QColor):
                 self.category_data[name]=CategoryData(val,None)
+        seen = set()
+        for i in self.items:
+            if id(i) in seen:
+                print("Found duplicate")
+                del i
+
+            seen.add(id(i))
+
 
     @staticmethod
     def load(filename:str)->KanbanBoard:

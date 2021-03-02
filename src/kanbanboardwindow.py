@@ -14,6 +14,7 @@ class LabeledColumn(QScrollArea):
 
     def __init__(self, text: str,parent:Optional[QWidget]=None):
         super(LabeledColumn, self).__init__(parent)
+        self.setObjectName("LabeledColumn: "+text)
         self.vlayout = QVBoxLayout()
         self.vlayout.setAlignment(Qt.AlignTop)
         label = QLabel(text)
@@ -49,13 +50,9 @@ class LabeledColumn(QScrollArea):
         """
         #At some point it would be a *very* good idea to rewrite this
         #so that it isn't O(n+nlog(n) complexity)
-        widg = []
-        for i in range(self.widgetArea.count()):
-            i = self.widgetArea.itemAt(i).widget()
-            if i is None:
-                continue
+        widg = self.findChildren(KanbanWidget)
+        for i in widg:
             self.vlayout.removeWidget(i)
-            widg.append(i)
         widg.sort(key=lambda x:x.item.priority)
         for i in widg:
             self.widgetArea.addWidget(i)
@@ -107,7 +104,6 @@ class StatusView(QFrame):
         self.mainlayout.addWidget(self.availableColumn)
         self.mainlayout.addWidget(self.completedColumn)
         self.mainlayout.addWidget(self.blockedColumn)
-        self.populate()
 
     def selectColumn(self, state: ItemState)->LabeledColumn:
         """
@@ -124,11 +120,10 @@ class StatusView(QFrame):
 
     def addKanbanItem(self, k: KanbanItem)->None:
         state = k.state()
-        widg = KanbanWidget(self, k)
+        widg = KanbanWidget(None, k)
         self.kanbanWidgets.append(widg)
         self.selectColumn(state).addWidget(widg)
         widg.updateDisplay()
-        print(k.category)
         widg.changed.connect(self.widgetChange)
         self.setWindowModified(True)
         parent = self.window()
@@ -231,13 +226,21 @@ class QueueView(LabeledColumn):
         widg.setVisible(not (widg.item.completed or widg.item.blocked()))
         self.addWidget(widg)
         
-
+    def updateCategories(self)->None:
+        for i in self.findChildren(KanbanWidget):
+            if len(i.item.category)>0:
+                i.updateDisplay()
 
 
 
 
 class KanbanBoardWidget(QFrame):
+    """
+    Toplevel container for views into the board.
+    """
     kanbanWidgets: List[KanbanWidget]
+    #: A list of views that are populated from the 
+    #: board and updated accordingly
     views:List[AbstractView]
 
     def __init__(self, k: KanbanBoard):
@@ -278,17 +281,35 @@ class KanbanBoardWidget(QFrame):
         self.layout().addWidget(splitter)
         self.populate()
 
+        widget_counts = {}
+        for i in self.board.items:
+            c = len(i.widget)
+            if c not in widget_counts.keys():
+                widget_counts[c]=0
+            widget_counts[c]+=1
+
     def addKanbanItem(self, k: KanbanItem)->None:
+        """
+        Dispatch the addition of new kanbanitems
+        to views.
+
+        :param k: The kanbanitem being added
+        """
+        print(self.views)
         for i in self.views:
             i.addKanbanItem(k)
 
 
     def populate(self)->None:
         for i in self.board.items:
-            self.addKanbanItem(i)
+            for v in self.views:
+                v.addKanbanItem(i)
 
 
     def filterChanged(self):
+        """
+        Dispatch filterChanged events to each view
+        """
         query = self.searchText.text()
         # board.for_each_by_matching(lambda x,y: (x.setVisible(y) for i in x.widget),query)
         for i in self.views:

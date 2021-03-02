@@ -10,7 +10,6 @@ class CategorySelectDialog(QDialog):
     def __init__(self,k:KanbanItem,parent:QWidget=None):
         super(CategorySelectDialog,self).__init__(parent)
         self.item=k
-
         gridlayout=QGridLayout()
 
         self.categoryInput = QLineEdit()
@@ -104,6 +103,7 @@ class KanbanItemDialog(QDialog):
         """
 
         super(KanbanItemDialog, self).__init__(parent)
+        print(id(kbI))
         self.addAtEnd = kbI is None
         self.item = kbI if kbI is not None else KanbanItem(
             "", "", kbb, Priority.MEDIUM,)
@@ -158,10 +158,32 @@ class KanbanItemDialog(QDialog):
         self.dependencyList.setAlternatingRowColors(True)
         grdLayout.addWidget(self.dependencyList, 1, 0, 1, 1)
 
-        self.populateDependsOn()
+
 
         container.setLayout(grdLayout)
-        layout.addRow(self.tr("Dependencies"), container)
+
+        tabby = QTabWidget()
+        tabby.addTab(container,self.tr("Depends On"))
+
+        container2 = QFrame()
+
+        grd2 = QGridLayout()
+
+        self.dependentsOfChoice = QComboBox()
+        grd2.addWidget(self.dependentsOfChoice,0,0,1,1)
+
+        self.dependentsOfList = QListWidget()
+        grd2.addWidget(self.dependentsOfList,1,0,1,1)
+
+        dependentsOfAdd = QPushButton(self.tr("Add as dependent"))
+        dependentsOfAdd.clicked.connect(self.add_dependent_of)
+        grd2.addWidget(dependentsOfAdd,0,1,1,1)
+
+        container2.setLayout(grd2)
+
+        tabby.addTab(container2,self.tr("Dependents of"))
+
+        layout.addRow(self.tr("Dependencies"), tabby)
 
         self.completed = QCheckBox(self.tr("Completed"))
         layout.addRow("", self.completed)
@@ -177,7 +199,7 @@ class KanbanItemDialog(QDialog):
         self.accept_button.clicked.connect(self.accept)
         self.cancel_button.clicked.connect(self.reject)
         self.delete_button.clicked.connect(self.deleteItem)
-        self.delete_button.clicked.connect(self.reject)
+        # self.delete_button.clicked.connect(self.reject)
 
 
         container = QFrame()
@@ -193,11 +215,17 @@ class KanbanItemDialog(QDialog):
         self.setWindowModality(Qt.NonModal)
         self.setModal(False)
         self.updateFromItem()
+        self.populateDependsOn()
 
     def deleteItem(self)->None:
+        wanted = QMessageBox.question(self, "Delete", self.tr("Do you want to delete this item?"), 
+            QMessageBox.Yes|QMessageBox.No)
+        if wanted == QMessageBox.No:
+            return
         if self.addAtEnd:
             return
         self.board.remove_item(self.item)
+        self.reject()
 
     def hasChanged(self)->bool:
         i = self.item
@@ -205,6 +233,7 @@ class KanbanItemDialog(QDialog):
                or i.description!= self.descEdit.toPlainText() \
                or self.addAtEnd \
                or i.completed != (self.completed.checkState()==Qt.Checked)
+
     def updateItem(self)->None:
         """
         Update the KanbanItem from the widget values
@@ -219,6 +248,17 @@ class KanbanItemDialog(QDialog):
         item.depends_on.clear()
         for i in range(self.dependencyList.count()):
             item.depends_on.append(self.dependencyList.item(i).data(32))
+        dependentsOf = map(lambda x:x.data(32), [self.dependentsOfList.item(i) for i in range(self.dependentsOfList.count())])
+        dependentsOf = list(dependentsOf)
+
+        for i in self.board.dependents_of(self.item):
+            if item not in dependentsOf:
+                i.depends_on.remove(item)
+
+        for i in dependentsOf:
+            if item not in i.depends_on:
+                i.depends_on.append(item)
+
         from PySide2.QtCore import Qt
         item.completed = self.completed.checkState() == Qt.Checked
 
@@ -239,11 +279,21 @@ class KanbanItemDialog(QDialog):
         """
         thing = self.dependsOnCombo.currentData()
         self.dependsOnCombo.removeItem(self.dependsOnCombo.currentIndex())
-        self.item.depends_on.append(thing)
         item = QListWidgetItem(thing.short_name(), self.dependencyList)
         item.setText(thing.short_name())
         item.setData(32, thing)
-        item.setCheckedState(Qt.Checked if item.completed else Qt.Unchecked)
+        item.setCheckState(Qt.Checked if thing.completed else Qt.Unchecked)
+
+    def add_dependent_of(self)->None:
+        """
+        Handle adding this item to the selected thing
+        """
+        thing = self.dependentsOfChoice.currentData()
+        self.dependentsOfChoice.removeItem(self.dependentsOfChoice.currentIndex())
+        item = QListWidgetItem(thing.short_name(), self.dependentsOfList)
+        item.setText(thing.short_name())
+        item.setData(32, thing)
+        item.setCheckState(Qt.Checked if thing.completed else Qt.Unchecked)
 
     def populateDependsOn(self)->None:
         """
@@ -251,6 +301,8 @@ class KanbanItemDialog(QDialog):
         """
         self.dependencyList.clear()
         self.dependsOnCombo.clear()
+        self.dependentsOfList.clear()
+        self.dependentsOfChoice.clear()
         for i in self.item.depends_on:
             item = QListWidgetItem(i.short_name())
             item.setData(32, i)
@@ -265,7 +317,12 @@ class KanbanItemDialog(QDialog):
             if i in self.item.depends_on or i is self.item:
                 continue
             if self.item in i.depends_on:
+                item =QListWidgetItem(i.name)
+                item.setData(32, i)
+                self.dependentsOfList.addItem(item)
                 continue
+            else:
+                self.dependentsOfChoice.addItem(i.name, i)
             self.dependsOnCombo.addItem(i.short_name(), i)
 
     def dependency_selector_changed_index(self, _)->None:
