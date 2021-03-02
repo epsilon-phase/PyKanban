@@ -155,7 +155,6 @@ class KanbanWidget(QFrame):
         """
         Handle opening the editing dialog
         """
-        print(f"Opening widget for {id(self)}")
         self.priorState=self.item.state()
         #The reason we don't use this widget as the parent is because it causes
         #the dialog to adopt the background styling it currently has.

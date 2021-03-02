@@ -103,7 +103,6 @@ class KanbanItemDialog(QDialog):
         """
 
         super(KanbanItemDialog, self).__init__(parent)
-        print(id(kbI))
         self.addAtEnd = kbI is None
         self.item = kbI if kbI is not None else KanbanItem(
             "", "", kbb, Priority.MEDIUM,)

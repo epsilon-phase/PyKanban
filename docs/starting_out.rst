@@ -37,9 +37,12 @@ This is where you set the various fields of a task such as:
 - Priority
   
   The urgency that a task should be considered with
-- Dependencies
+- Depends On
   
   The list of tasks that this one depends on to be completed
+- Dependents Of
+
+  The list of tasks that depend on the task being edited.
 - Categories
 
   Metadata to permit further categorization based on whatever reasoning you prefer.
@@ -109,7 +112,7 @@ Working through the tasks produces a relatively
 sensible ordering of a set of tasks that you can 
 proceed through in without too much thought [1]_.
 
-Setting priorities on tasks allow some further control 
+Setting priorities on tasks allow further control 
 over what order tasks are presented to you in.
 
 .. [1] At least, if you're someone like us who don't much care for forethought

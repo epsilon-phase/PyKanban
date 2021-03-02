@@ -26,7 +26,7 @@ To read how to use it, look at [Starting Out](docs/starting_out.rst)
     * Exists in the code, but doesn't have any indication that it 
       happens in the UI
 * Alternative views of the tasks remaining
-    - [ ] Queue View
+    - [X] Queue View
 
       Just show what tasks are immediately doable, for those times when you 
       have no idea what you want to work on, but know that there are things you need to do
