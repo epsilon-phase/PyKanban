@@ -1,6 +1,9 @@
 __pycache__
-main.dist
-main.build
-pykanban.build
-main.bin
+# Nuitka3 output
+*.dist
+*.build
+*.bin
+# Generated documentation
 build
+# Sublime project stuff which won't transfer
+*.sublime*
