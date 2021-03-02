@@ -179,6 +179,10 @@ class KanbanItemDialog(QDialog):
         dependentsOfAdd.clicked.connect(self.add_dependent_of)
         grd2.addWidget(dependentsOfAdd,0,1,1,1)
 
+        remove_dependent_button = QPushButton(self.tr("Remove dependent"))
+        remove_dependent_button.clicked.connect(self.remove_dependent_of)
+        grd2.addWidget(remove_dependent_button,1,1,1,1)
+
         container2.setLayout(grd2)
 
         tabby.addTab(container2,self.tr("Dependents of"))
@@ -294,6 +298,12 @@ class KanbanItemDialog(QDialog):
         item.setText(thing.short_name())
         item.setData(32, thing)
         item.setCheckState(Qt.Checked if thing.completed else Qt.Unchecked)
+
+    def remove_dependent_of(self)->None:
+        thing = self.dependentsOfList.selectedItems()[0]
+        self.dependentsOfList.takeItem(self.dependentsOfList.selectedIndexes()[0].row())
+        thing = thing.data(32)
+        self.dependentsOfChoice.addItem(thing.name,thing)
 
     def populateDependsOn(self)->None:
         """
