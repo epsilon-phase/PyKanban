@@ -6,6 +6,7 @@ from src.kanban import *
 from src.kanbanwidget import KanbanWidget
 from src.kanbanitemdialog import KanbanItemDialog
 from src.categorylist import CategoryEditor
+from src.treeview import TreeView
 from typing import *
 
 class LabeledColumn(QScrollArea):
@@ -162,6 +163,8 @@ class StatusView(QFrame):
                     self.widgetChange(i, ItemState.BLOCKED, i.item.state())
 
     def populate(self)->None:
+        if self.board is None:
+            return
         for i in self.board.items:
             self.addKanbanItem(i)
 
@@ -249,6 +252,7 @@ class KanbanBoardWidget(QFrame):
         self.views = []
         self.views.append(StatusView(self,k))
         self.views.append(QueueView(self,k))
+        self.views.append(TreeView(self,k))
 
         utilityPanel = QFrame()
         utilityLayout = QVBoxLayout()

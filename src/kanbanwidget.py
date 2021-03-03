@@ -32,7 +32,7 @@ class ClickableLabel(QLabel):
         self.setCursor(Qt.ArrowCursor)
         
 
-    def event(self,event:QEvent)->None:
+    def event(self,event:QEvent)->bool:
         if event.type()==QEvent.HoverEnter:
             self.hoverEnter()
         elif event.type()==QEvent.HoverLeave:
@@ -160,7 +160,10 @@ class KanbanWidget(QFrame):
         #the dialog to adopt the background styling it currently has.
         #It honestly looks kinda nice, and might be worth doing, 
         #but for now it's a bug
-        self.dialog = KanbanItemDialog(self.parent(),self.item,self.item.board)
+        parent = self.parent
+        if bool(QSettings().value(settingNames.USE_CATEGORY_STYLING)):
+            parent = self
+        self.dialog = KanbanItemDialog(parent, self.item,self.item.board)
         self.dialog.finished.connect(self.finishDialog)
         self.dialog.show()
 

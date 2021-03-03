@@ -42,9 +42,10 @@ class KanbanItem:
     board:KanbanBoard
     #:The parent widget, will be None until initialized
     widget: List[QWidget]
+    position : Optional[Tuple[int,int]]
     #: The set of categories this task is under
     category: Set[str]
-    __slots__=('completed','board','priority','name','depends_on','description','assigned','widget', 'category')
+    __slots__=('completed','board','priority','name','depends_on','description','assigned','widget', 'category','position')
     __weakref__=('widget')
 
     def __init__(self, name, description,board:KanbanBoard=None,priority=Priority.MEDIUM):
@@ -57,6 +58,7 @@ class KanbanItem:
         self.assigned = None
         self.board = board
         self.widget = None
+        self.position = (0,0)
         self.category = set()
 
     def category_matches(self,text:str)->bool:
@@ -120,6 +122,7 @@ class KanbanItem:
 
     def print(self,complete:bool=False,level:int=0)->None:
         depth = '\t'*level
+        print(f"{depth}----")
         print(f"{depth}Name:{self.name}")
         print(f"{depth}Description:'{self.description}'")
         print(f"{depth}completed: {self.completed}")
@@ -178,6 +181,7 @@ class KanbanItem:
             for slot in self.__slots__
             if hasattr(self,slot))
         del state['widget']
+        del state[position]
         return state
 
     def __setstate__(self, state):
@@ -200,8 +204,57 @@ class KanbanItem:
             print("Filled in missing category set")
         if isinstance(self.category,list):
             self.category=set(self.category)
+        self.position = (0,0)
 
 
+    # def reposition(self, depth:int=0, x = 0)->int:
+    #     """
+    #     Reposition the current item and its children so that it may 
+    #     be drawn as a tree.
+
+    #     :param depth: The depth of the current item
+    #     :param x: The lateral position of the current item
+    #     """
+    #     ox = x
+    #     for i in self.depends_on:
+    #         diff = i.reposition(depth+1, x)
+    #         print(f"diff={diff}")
+    #         x+=diff
+    #     else:
+    #         self.position=(x,depth)
+    #         return 1
+    #     if len(self.depends_on) > 1:
+    #         avg = sum(map(lambda x:x.position[0],self.depends_on))
+    #         avg /= len(self.depends_on)
+    #         self.position=(avg,depth)
+    #         diff = self.depends_on[-1].position[0] - self.depends_on[0].position[0]
+    #         if diff == 0:
+    #             print("0 Position increment D:")
+    #         print(f"{diff} position increment")
+    #         return x-ox
+    #     else:
+    #         self.position=(self.depends_on[0].position[0],depth)
+    #         return 1
+
+    def reposition(self,x:int=0,depth:int=0):
+        if self.depends_on == []:
+            self.position=(x,depth)
+            return x+1
+        for i in self.depends_on:
+            x=i.reposition(x,depth+1)
+
+        if len(self.depends_on)==1:
+            self.position=(self.depends_on[0].position[0],depth)
+            return self.position[0]+1
+        else:
+            x = sum(map(lambda x:x.position[0],self.depends_on))
+            x //= len(self.depends_on)
+            self.position = (x,depth)
+            return self.depends_on[-1].position[0]+2
+
+
+
+        
 
 class KanbanBoard:
     """
@@ -215,7 +268,7 @@ class KanbanBoard:
     categories: Set[str]
     #: Association between the category and the optional styling data that
     #: may be associated to it.
-    category_data: Dict[str,CategoryData]
+    category_data: Dict[str, CategoryData]
 
     def __init__(self):
         self.items=[]
@@ -223,7 +276,7 @@ class KanbanBoard:
         self.categories=set()
         self.category_data=dict()
 
-    def for_each_by_matching(self,func:Callable[(KanbanItem,bool)],query:str)->None:
+    def for_each_by_matching(self,func:Callable[[KanbanItem,bool],None],query:str)->None:
         """
         Call a function on each item, also passing in a bool indicating its matchiness
 
@@ -283,6 +336,10 @@ class KanbanBoard:
             item_dx = i.depends_on.index(item)
             del i.depends_on[item_dx]
 
+    def resetPositions(self):
+        for i in self.items:
+            i.position = None
+
     def trim_unused_categories(self)->Set[str]:
         """
         Remove categories that don't appear in any items.
@@ -290,8 +347,8 @@ class KanbanBoard:
         :returns: A list of removed categories.
         """
         seen:Set[str] = set()
-        for i in self.items:
-            seen = seen.union(i.category)
+        for item in self.items:
+            seen = seen.union(item.category)
         not_used = self.categories.difference(seen)
         for i in not_used:
             if i in self.category_data.keys():
