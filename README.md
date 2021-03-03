@@ -5,6 +5,10 @@ A small kanban application written in python.
 To read how to use it, look at [Starting Out](docs/starting_out.rst)
 
 
+For now, in order to run it, you may run the command `python3 pykanban.py`. In 
+the future this will be more like a standard python application.
+
+
 ## Features
 
 * Remembers what file you had open(Yes, groundbreaking stuff here) :3
