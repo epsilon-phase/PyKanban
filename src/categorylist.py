@@ -112,7 +112,7 @@ class CategoryEditor(QDialog):
         set aren't useful for anyone
         """
         #Don't permit empty categories to be added, those aren't helpful
-        if categoryInput.text() == "":
+        if self.categoryInput.text() == "":
             return
         self.listView.addItem(self.categoryInput.text())
         self.categoryInput.setText("")
