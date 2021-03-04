@@ -137,7 +137,7 @@ class KanbanWidget(QFrame):
         Update the displayed information from the KanbanItem associated with the
         widget.
         """
-        self.name.setText(self.item.name + f"<small>[{','.join(self.item.category)}]</small>")
+        self.name.setText(self.item.name + f"<br/> <small>[{','.join(self.item.category)}]</small>")
         self.name.updateGeometry()
         self.description.setText(self.item.description)
         self.finished.setChecked(self.item.completed)
