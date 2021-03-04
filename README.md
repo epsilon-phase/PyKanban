@@ -16,13 +16,18 @@ the future this will be more like a standard python application.
 * Task dependency tracking.
 * Lightweight file format
 * Filtering
+* Tree Display
+  - Easy Dependency visualization
+* Queue Display
+  - List of immediately doable tasks, for when you don't really feel the need
+    for details
 
 
 ## Todo
 
 
-* [ ] Task Dependency visualization
-    * [ ] Ideally a tree display
+* [X] Task Dependency visualization
+    * [X] Ideally a tree display
 * [X] Task categorization
 * [X] Filtering
 * [X] Searching
@@ -34,7 +39,7 @@ the future this will be more like a standard python application.
 
       Just show what tasks are immediately doable, for those times when you 
       have no idea what you want to work on, but know that there are things you need to do
-    - [ ] Tree View
+    - [X] Tree View
 
       Keep track of the dependencies of some goal that you are working towards.
 * Stretch ideas

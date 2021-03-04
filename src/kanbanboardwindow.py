@@ -146,6 +146,7 @@ class StatusView(QFrame):
         :param fromState: The previous state of the widget
         :param toState: The new state of the widget
         """
+        print(f"{widget.item.name}: {fromState}->{toState}")
 
         if fromState == toState:
             #Although the item may not have changed column,
@@ -213,6 +214,8 @@ class QueueView(LabeledColumn):
         widget.setVisible(not (widget.item.completed or widget.item.blocked()))
 
     def populate(self)->None:
+        if self.board is None:
+            return
         for i in self.board.items:
             widget = KanbanWidget(self,i)
             widget.setVisible(not (widget.item.completed or widget.item.blocked()))
@@ -285,7 +288,7 @@ class KanbanBoardWidget(QFrame):
         self.layout().addWidget(splitter)
         self.populate()
 
-        widget_counts = {}
+        widget_counts:Dict[int,int] = {}
         for i in self.board.items:
             c = len(i.widget)
             if c not in widget_counts.keys():
@@ -305,9 +308,8 @@ class KanbanBoardWidget(QFrame):
 
 
     def populate(self)->None:
-        for i in self.board.items:
-            for v in self.views:
-                v.addKanbanItem(i)
+        for v in self.views:
+            v.populate()
 
 
     def filterChanged(self):

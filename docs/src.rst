@@ -60,6 +60,14 @@ src.settingNames module
    :undoc-members:
    :show-inheritance:
 
+src.taskcategory module
+----------------------
+.. automodule:: src.taskcategory
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
 Module contents
 ---------------
 

@@ -73,7 +73,8 @@ class KanbanWidget(QFrame):
         :param kbi: The KanbanItem displayed
         """
         super(KanbanWidget,self).__init__(parent)
-
+        if kbi is None:
+            raise ValueError()
         self.setSizePolicy(QSizePolicy(QSizePolicy.Preferred,QSizePolicy.MinimumExpanding))
         self.setFrameShape(QFrame.StyledPanel)
         self.item=kbi
@@ -99,7 +100,8 @@ class KanbanWidget(QFrame):
         self.description = QTextEdit()
         self.description.setReadOnly(True)
         s=QSettings()
-        line_count=int(s.value(settingNames.MAX_DESCRIPTION_LENGTH))
+
+        line_count=int(str(s.value(settingNames.MAX_DESCRIPTION_LENGTH, 3)))
         self.description.setMaximumHeight(self.description.fontMetrics().height()*line_count)
         
         layout.addWidget(self.description,alignment=Qt.AlignTop)
@@ -110,8 +112,19 @@ class KanbanWidget(QFrame):
         layout.addWidget(self.finished)
 
         self.editButton = QPushButton(self.tr("Edit"))
+
+        buttonContainer =QFrame()
+        buttonContainer.setLayout(QHBoxLayout())
         self.editButton.clicked.connect(self.openEditingDialog)
-        layout.addWidget(self.editButton)
+        buttonContainer.layout().addWidget(self.editButton)
+
+        createChildButton = QPushButton(self.tr("Add"))
+        createChildButton.setToolTip(self.tr("Create Child task"))
+        createChildButton.clicked.connect(self.createChildTask)
+
+        buttonContainer.layout().addWidget(createChildButton)
+
+        layout.addWidget(buttonContainer)
 
         self.updateDisplay()
 
@@ -166,6 +179,16 @@ class KanbanWidget(QFrame):
         self.dialog = KanbanItemDialog(parent, self.item,self.item.board)
         self.dialog.finished.connect(self.finishDialog)
         self.dialog.show()
+
+    def createChildTask(self)->None:
+        self.priorState = self.item.state()
+        dialog = KanbanItemDialog(self, None, self.item.board)
+        lw = QListWidgetItem(self.item.name,dialog.dependentsOfList)
+        lw.setData(32,self.item)
+        dialog.dependentsOfList.addItem(lw)
+        dialog.NewItem.connect(self.window().kanban.addKanbanItem)
+        dialog.finished.connect(self.finishDialog)
+        dialog.show()
 
     def finishDialog(self,code):
         """

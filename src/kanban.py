@@ -181,7 +181,8 @@ class KanbanItem:
             for slot in self.__slots__
             if hasattr(self,slot))
         del state['widget']
-        del state[position]
+        if 'position' in state.keys():
+            del state['position']
         return state
 
     def __setstate__(self, state):
@@ -237,19 +238,32 @@ class KanbanItem:
     #         return 1
 
     def reposition(self,x:int=0,depth:int=0):
+        if self.position is not None:
+            print(f"double visited: {self.name}")
+            return x+1
         if self.depends_on == []:
             self.position=(x,depth)
             return x+1
-        for i in self.depends_on:
-            x=i.reposition(x,depth+1)
+
 
         if len(self.depends_on)==1:
-            self.position=(self.depends_on[0].position[0],depth)
-            return self.position[0]+1
+            if self.depends_on[0].position is None:
+                x=self.depends_on[0].reposition(x,depth+1)
+                self.position=(self.depends_on[0].position[0],depth)
+            else:
+                self.position=(x,depth)
+            return x+1
         else:
-            x = sum(map(lambda x:x.position[0],self.depends_on))
-            x //= len(self.depends_on)
-            self.position = (x,depth)
+            avgpos = 0 
+            avgcount = 0
+            for i in self.depends_on:
+                if i.position is not None:
+                    continue
+                x=i.reposition(x,depth+1)
+                avgpos += i.position[0]
+                avgcount+=1
+            avgpos //= avgcount
+            self.position = (avgpos,depth)
             return self.depends_on[-1].position[0]+2
 
 
@@ -393,6 +407,14 @@ class KanbanBoard:
                 del i
 
             seen.add(id(i))
+
+        stack = list(self.items)
+        while len(stack)>0:
+            item = stack.pop()
+            if item not in self.items:
+                print("Found disconnected item")
+            for i in item.depends_on:
+                stack.append(i)
 
 
     @staticmethod

@@ -6,6 +6,7 @@ class TreeView(QFrame):
     def __init__(self,parent:QWidget=None,board:KanbanBoard=None):
         super(TreeView,self).__init__(parent)
         self.board = board
+        self.finishedAdding=False
         root = QFrame()
         root.setLayout(QVBoxLayout())
 
@@ -42,16 +43,14 @@ class TreeView(QFrame):
         self.itemChoice.setItemData(self.itemChoice.count()-1,k,32)
         print(k)
         print(f"Length of children: {len(self.display.children())}")
-        # self.relayout(self.itemChoice.currentIndex())
+        if self.finishedAdding:
+            self.relayout(self.itemChoice.currentIndex())
 
     def relayout(self,index):
         print(index)
         items = self.findChildren(KanbanWidget)
         print(len(items))
         self.board.resetPositions()
-        for i in self.board.items:
-            if i.position is not None:
-                print("Fuck, missed an item D:")
         item = self.itemChoice.currentData(32)
         if item is None:
             return
@@ -67,8 +66,6 @@ class TreeView(QFrame):
                 print(f"{i.item.name} is hidden")
         seen = set()
         for i in items:
-            if i.item.name == 'Fix combobox suggestions':
-                i.hide()
             if i.item.position is None:
                 continue
             if i in seen:
@@ -82,7 +79,7 @@ class TreeView(QFrame):
 
     def filterChanged(self,text:str):
         for i in self.findChildren(KanbanWidget):
-            i.setVisible(i.position is not None and i.item.matches(text))
+            i.setVisible(i.item.position is not None and i.item.matches(text))
 
     def updateCategories(self):
         for i in filter(lambda x:len(x.item.category)>0,self.findChildren(KanbanWidget)):
@@ -91,3 +88,15 @@ class TreeView(QFrame):
     def tabName(self)->str:
         return "Tree"
 
+    def populate(self)->None:
+        for i in self.board.items:
+            self.addKanbanItem(i)
+        self.relayout(self.itemChoice.currentIndex())
+        self.finishedAdding=True
+
+    def newBoard(self,board:KanbanBoard)->None:
+        for i in self.findChildren(KanbanWidget):
+            self.layout().removeWidget(i)
+            i.deleteLater()
+        self.finishedAdding=False
+        self.populate()
