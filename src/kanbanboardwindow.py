@@ -423,7 +423,10 @@ class KanbanBoardWindow(QMainWindow):
                 return
         settings=QSettings()
         settings.setValue(LAST_DOCUMENT_USED,filename)
-        self.kanban.board.save(filename)
+        try:
+            self.kanban.board.save(filename)
+        except PicklingError:
+            QErrorMessage.showMessage("Failed to save, sorry :(")
         self.setWindowModified(False)
         self.updateTitle()
 
@@ -434,18 +437,25 @@ class KanbanBoardWindow(QMainWindow):
         if self.isWindowModified() and bool(QSettings().value("Recovery/autosave")):
             print("Autosaving :D")
             if self.board.filename is not None:
-                self.board.save()
+                try:
+                    self.kanban.board.save(filename)
+                except PicklingError:
+                    QErrorMessage.showMessage("Failed to save, sorry :(")
                 print("Autosaved :)")
                 self.setWindowModified(False)
 
     def openSaveAs(self):
         from src.settingNames import LAST_DOCUMENT_USED
+        from pickle import PicklingError
         filename = self.getSaveFilename()
         if filename=='':
             return
         settings=QSettings()
-        self.kanban.board.save(filename)
-        settings.setValue(LAST_DOCUMENT_USED,filename)
+        try:
+            self.kanban.board.save(filename)
+            settings.setValue(LAST_DOCUMENT_USED,filename)
+        except PicklingError:
+            QErrorMessage.showMessage("Failed to save, sorry :(")
         self.updateTitle()
 
     def openLoad(self):

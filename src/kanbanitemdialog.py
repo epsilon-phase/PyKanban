@@ -76,7 +76,7 @@ class KanbanItemDialog(QDialog):
     addAtEnd: bool
     #: Passes on the information that a new item was created by the dialog,
     #: probably indicating that the other UI needs updating to reflect that
-    NewItem: Signal = Signal(KanbanItem)
+    NewItem = Signal(KanbanItem)
 
     def updateFromItem(self)->None:
         """

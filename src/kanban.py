@@ -381,7 +381,9 @@ class KanbanBoard:
         else:
             filename = self.filename
         with open(filename,'wb') as f:
-            pickle.dump(self,f)
+            thing = pickle.dumps(self)
+
+            f.write(thing)
 
     def _fix_missing(self)->None:
         """

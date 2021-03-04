@@ -47,9 +47,7 @@ class TreeView(QFrame):
             self.relayout(self.itemChoice.currentIndex())
 
     def relayout(self,index):
-        print(index)
         items = self.findChildren(KanbanWidget)
-        print(len(items))
         self.board.resetPositions()
         item = self.itemChoice.currentData(32)
         if item is None:
@@ -62,8 +60,6 @@ class TreeView(QFrame):
             if show:
                 self.grd.removeWidget(i)
                 self.grd.addWidget(i,i.item.position[1],i.item.position[0],1,1)
-            else:
-                print(f"{i.item.name} is hidden")
         seen = set()
         for i in items:
             if i.item.position is None:
