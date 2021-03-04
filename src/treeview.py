@@ -1,8 +1,36 @@
 from PySide2.QtWidgets import *
 from PySide2.QtCore import Qt
+from PySide2.QtGui import QPaintEvent,QPainter, QPainterPath
 from src.kanban import KanbanBoard, KanbanItem, ItemState
 from src.kanbanwidget import KanbanWidget
+class TreeArea(QFrame):
+    def __init__(self,parent=None,board=None):
+        super(TreeArea,self).__init__(parent)
+        self.board=board
+
+    def paintEvent(self,event:QPaintEvent):
+        from PySide2.QtCore import QPointF
+        path = QPainterPath(QPointF(0,0))
+        painter =QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        for i in self.board.items:
+            widget:QWidget = i.widget_of(self)
+            if not widget.isVisible():
+                continue
+            pos1 = widget.pos()
+            pos1.setX(pos1.x()+widget.size().width()//2)
+            pos1.setY(pos1.y()+widget.size().height())
+            for d in i.depends_on:
+                child:QWidget = d.widget_of(self)
+                pos2 = child.pos()
+                pos2.setX(pos2.x()+ child.size().width()//2)
+                path.moveTo(pos1)
+                path.lineTo(pos2)
+        painter.drawPath(path)
+        super(TreeArea,self).paintEvent(event)
+
 class TreeView(QFrame):
+    board:KanbanBoard 
     def __init__(self,parent:QWidget=None,board:KanbanBoard=None):
         super(TreeView,self).__init__(parent)
         self.board = board
@@ -19,8 +47,10 @@ class TreeView(QFrame):
         headerFrame.setSizePolicy(QSizePolicy.Maximum,QSizePolicy.Maximum)
         root.layout().addWidget(headerFrame)
 
-        display = QFrame()
+        display = TreeArea(self,board)
         self.grd = QGridLayout()
+        self.grd.setVerticalSpacing(30)
+        self.grd.setHorizontalSpacing(30)
         display.setLayout(self.grd)
         
         self.display=display
@@ -68,6 +98,8 @@ class TreeView(QFrame):
                 print("Found position with more than one widget D:")
 
             seen.add(i.item.position)
+
+
 
 
     def widgetChange(self,widget:KanbanWidget, fromState:ItemState,toState:ItemState):

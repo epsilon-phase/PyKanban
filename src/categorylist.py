@@ -145,7 +145,7 @@ class CategoryEditor(QDialog):
         item.setTextColor(self.palette().text().color())
 
     def clearBackground(self):
-        if not self.listView.isItemSelected():
+        if 0 == len(self.listView.selectedItems()):
             return
         item = self.listView.selectedItems()[0]
         item.data(32).background = None

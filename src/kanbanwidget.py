@@ -137,7 +137,7 @@ class KanbanWidget(QFrame):
         Update the displayed information from the KanbanItem associated with the
         widget.
         """
-        self.name.setText(self.item.name)
+        self.name.setText(self.item.name + f"<small>[{','.join(self.item.category)}]</small>")
         self.name.updateGeometry()
         self.description.setText(self.item.description)
         self.finished.setChecked(self.item.completed)
@@ -151,16 +151,16 @@ class KanbanWidget(QFrame):
                 if i in self.item.board.category_data.keys():
                     category=i
                     break
+            stylesheet = ""
             if category in self.item.board.category_data.keys():
                 data = self.item.board.category_data[category]
                 if data.foreground is not None:
                     foreground:QColor = data.foreground
-                    self.name.setStyleSheet(f"color: rgb({foreground.red()},{foreground.green()},{foreground.blue()})")
-                else:
-                    self.name.setStyleSheet("")
+                    stylesheet+=f"color: rgb({foreground.red()},{foreground.green()},{foreground.blue()});"
                 if data.background is not None:
                     background = data.background
-                    self.setStyleSheet(f"background: rgb({background.red()},{background.green()},{background.blue()})")
+                    stylesheet= f"background: rgb({background.red()},{background.green()},{background.blue()})"
+            self.setStyleSheet(stylesheet)
 
         self.updateGeometry()
 

@@ -266,6 +266,11 @@ class KanbanItem:
             self.position = (avgpos,depth)
             return self.depends_on[-1].position[0]+2
 
+    def widget_of(self,widget:QWidget)->QWidget:
+        for i in self.widget:
+            if i.parent() == widget:
+                return i
+
 
 
         
