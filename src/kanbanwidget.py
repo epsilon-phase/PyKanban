@@ -82,6 +82,7 @@ class KanbanWidget(QFrame):
             self.item.widget=[]
 
         self.item.widget.append(self)
+        
 
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignTop)
@@ -203,5 +204,5 @@ class KanbanWidget(QFrame):
         :param code: The way that this dialog finished, Accepted, Rejected, etc
         """
         if code==QDialog.Accepted:
-            self.updateDisplay()
-            self.changed.emit(self,self.priorState,self.item.state())
+            self.item.markChanged()
+

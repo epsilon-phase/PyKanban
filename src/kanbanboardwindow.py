@@ -247,7 +247,7 @@ class KanbanBoardWidget(QFrame):
     kanbanWidgets: List[KanbanWidget]
     #: A list of views that are populated from the 
     #: board and updated accordingly
-    views:List[AbstractView]
+    views:List[Union[TreeView,QueueView,StatusView]]
 
     def __init__(self, k: KanbanBoard):
         super(KanbanBoardWidget, self).__init__()

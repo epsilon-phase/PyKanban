@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import *
 from enum import IntEnum,Enum,auto
+
 import pickle
 
 
@@ -47,7 +48,6 @@ class KanbanItem:
     category: Set[str]
     __slots__=('completed','board','priority','name','depends_on','description','assigned','widget', 'category','position')
     __weakref__=('widget')
-
     def __init__(self, name, description,board:KanbanBoard=None,priority=Priority.MEDIUM):
         self.priority=priority
         self.name=name
@@ -251,25 +251,35 @@ class KanbanItem:
                 x=self.depends_on[0].reposition(x,depth+1)
                 self.position=(self.depends_on[0].position[0],depth)
             else:
-                self.position=(x,depth)
+                self.position=(x, depth)
             return x+1
         else:
             avgpos = 0 
             avgcount = 0
+            largest = 0 
             for i in self.depends_on:
                 if i.position is not None:
+                    if i.depends_on == []:
+                        i.position = (i.position[0],max(i.position[1],depth+1))
                     continue
                 x=i.reposition(x,depth+1)
                 avgpos += i.position[0]
-                avgcount+=1
+                avgcount += 1
+                largest = x
             avgpos //= avgcount
             self.position = (avgpos,depth)
-            return self.depends_on[-1].position[0]+2
+            return largest+1
 
     def widget_of(self,widget:QWidget)->QWidget:
         for i in self.widget:
             if i.parent() == widget:
                 return i
+
+    def markChanged(self):
+        for i in self.widget:
+            i.updateDisplay()
+
+    
 
 
 

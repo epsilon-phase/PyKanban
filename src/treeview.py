@@ -102,7 +102,7 @@ class TreeView(QFrame):
         for i in items:
             if i.item.position is None:
                 continue
-            if i in seen:
+            if i.item.position in seen:
                 print("Found position with more than one widget D:")
 
             seen.add(i.item.position)
