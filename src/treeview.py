@@ -13,6 +13,7 @@ class TreeArea(QFrame):
         path = QPainterPath(QPointF(0,0))
         painter =QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
+        offset = QPointF(0, 5.0)
         for i in self.board.items:
             widget:QWidget = i.widget_of(self)
             if not widget.isVisible():
@@ -25,7 +26,14 @@ class TreeArea(QFrame):
                 pos2 = child.pos()
                 pos2.setX(pos2.x()+ child.size().width()//2)
                 path.moveTo(pos1)
+                path.lineTo(QPointF(pos1.x(),pos1.y()+offset.y()))
+                path.lineTo(QPointF(pos2.x(),pos2.y()-offset.y()))
                 path.lineTo(pos2)
+                pos = path.currentPosition()
+                path.addEllipse(pos.x()-2.5,pos.y()-2.5,5,5)
+        p = painter.pen()
+        p.setWidthF(1.5)
+        painter.setPen(p)
         painter.drawPath(path)
         super(TreeArea,self).paintEvent(event)
 
