@@ -3,7 +3,7 @@ from src.kanban import *
 from src.kanbanitemdialog import *
 import src.settingNames as settingNames
 from PySide2.QtCore import Signal,QEvent,Qt,QSettings
-from PySide2.QtGui import QMouseEvent, QCursor
+from PySide2.QtGui import QMouseEvent, QCursor, QPalette
 from typing import Callable
 import re
 
@@ -151,16 +151,18 @@ class KanbanWidget(QFrame):
                 if i in self.item.board.category_data.keys():
                     category=i
                     break
-            stylesheet = ""
             if category in self.item.board.category_data.keys():
                 data = self.item.board.category_data[category]
+                palette = self.palette()
                 if data.foreground is not None:
                     foreground:QColor = data.foreground
-                    stylesheet+=f"color: rgb({foreground.red()},{foreground.green()},{foreground.blue()});"
+                    palette.setColor(QPalette.Text, foreground)
                 if data.background is not None:
                     background = data.background
-                    stylesheet= f"background: rgb({background.red()},{background.green()},{background.blue()})"
-            self.setStyleSheet(stylesheet)
+                    palette.setColor(QPalette.Window,background)
+            # self.setStyleSheet(stylesheet)
+            self.setPalette(palette)
+            self.setAutoFillBackground(True)
 
         self.updateGeometry()
 
@@ -177,6 +179,8 @@ class KanbanWidget(QFrame):
         if bool(QSettings().value(settingNames.USE_CATEGORY_STYLING)):
             parent = self
         self.dialog = KanbanItemDialog(parent, self.item,self.item.board)
+        if bool(QSettings().value(settingNames.USE_CATEGORY_STYLING)):
+            self.dialog.setPalette(self.palette())
         self.dialog.finished.connect(self.finishDialog)
         self.dialog.show()
 
