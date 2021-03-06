@@ -14,6 +14,7 @@ class Priority(IntEnum):
     HIGH=auto()
     MEDIUM=auto()
     LOW=auto()
+    INVALID=auto()
 
 
 class ItemState(Enum):
@@ -280,6 +281,7 @@ class KanbanItem:
     def markChanged(self):
         for i in self.widget:
             i.updateDisplay()
+            i.changed.emit(i,Priority.INVALID,self.state())
 
 
 class KanbanBoard:
