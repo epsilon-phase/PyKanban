@@ -1,5 +1,4 @@
 from PySide2.QtWidgets import *
-from PySide2.QtCore import Qt
 from PySide2.QtGui import QPaintEvent,QPainter, QPainterPath
 from src.kanban import KanbanBoard, KanbanItem, ItemState
 from src.kanbanwidget import KanbanWidget
@@ -9,6 +8,9 @@ class TreeArea(QFrame):
         self.board=board
 
     def paintEvent(self,event:QPaintEvent):
+        """
+        Draw lines to denote each item's parents/children
+        """
         from PySide2.QtCore import QPointF
         path = QPainterPath(QPointF(0,0))
         painter =QPainter(self)
@@ -41,6 +43,7 @@ class TreeView(QFrame):
     board:KanbanBoard 
     def __init__(self,parent:QWidget=None,board:KanbanBoard=None):
         super(TreeView,self).__init__(parent)
+        assert board is not None
         self.board = board
         self.finishedAdding=False
         root = QFrame()
