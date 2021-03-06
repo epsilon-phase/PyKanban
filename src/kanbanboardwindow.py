@@ -405,13 +405,16 @@ class KanbanBoardWindow(QMainWindow):
         a
 
     def getSaveFilename(self)->str:
-        thing = QFileDialog.getSaveFileName(filter="Kanban Boards (*.kb)")
+        thing = QFileDialog.getSaveFileName(filter="Kanban Boards (*.kb);;Kanban Boards (*.kb.json)")
         print(thing)
         filename: str = thing[0]
         if filename == '':
             return filename
-        if not filename.endswith(".kb"):
+
+        if thing[1]=='Kanban Boards (*.kb)' and not filename.endswith('.kb'):
             filename += ".kb"
+        elif not filename.endswith('.kb.json'):
+            filename += ".kb.json"
         return filename
 
     def openSave(self):

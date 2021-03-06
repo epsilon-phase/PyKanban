@@ -4,6 +4,8 @@ from enum import IntEnum,Enum,auto
 
 import pickle
 
+import json
+
 
 class Priority(IntEnum):
     """
@@ -279,11 +281,6 @@ class KanbanItem:
         for i in self.widget:
             i.updateDisplay()
 
-    
-
-
-
-        
 
 class KanbanBoard:
     """
@@ -395,10 +392,20 @@ class KanbanBoard:
             self.filename = filename
         else:
             filename = self.filename
+        if filename.endswith('.json'):
+            self.export(filename)
+            return
         with open(filename,'wb') as f:
             thing = pickle.dumps(self)
-
             f.write(thing)
+
+    def export(self,filename:str)->None:
+        if KanbanBoard.Encoder is None:
+            from src.serializers import KanbanBoardEncoder
+            KanbanBoard.Encoder = KanbanBoardEncoder
+        with open(filename,'w') as f:
+            import json
+            f.write(json.dumps(self,cls=KanbanBoard.getSerializer()))
 
     def _fix_missing(self)->None:
         """
@@ -433,7 +440,8 @@ class KanbanBoard:
             for i in item.depends_on:
                 stack.append(i)
 
-
+    Encoder = None
+    Decoder = None
     @staticmethod
     def load(filename:str)->KanbanBoard:
         """
@@ -441,7 +449,21 @@ class KanbanBoard:
         
         :param filename: The filename to load the kanban board from
         """
-        with open(filename,'rb') as f:
-            c=pickle.load(f)
-            c._fix_missing()
-            return c
+        if filename.endswith(".json"):
+            return KanbanBoard.loadJson(filename)
+        else:
+            with open(filename,'rb') as f:
+                c=pickle.load(f)
+                c._fix_missing()
+               
+                return c
+
+    @staticmethod
+    def loadJson(filename:str):
+        if KanbanBoard.Decoder is None:
+            from src.serializers import as_kanban_board
+            KanbanBoard.Decoder = as_kanban_board
+        with open(filename,'r') as f:
+            return json.load(f,object_hook=KanbanBoard.Decoder)
+
+
