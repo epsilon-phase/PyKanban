@@ -49,7 +49,7 @@ class KanbanItem:
     position : Optional[Tuple[int,int]]
     #: The set of categories this task is under
     category: Set[str]
-    __slots__=('completed','board','priority','name','depends_on','description','assigned','widget', 'category','position')
+    __slots__=('completed','board','priority','name','depends_on','description','assigned','widget', 'category')
     __weakref__=('widget')
     def __init__(self, name, description,board:KanbanBoard=None,priority=Priority.MEDIUM):
         self.priority=priority
@@ -60,8 +60,6 @@ class KanbanItem:
         self.completed = False
         self.assigned = None
         self.board = board
-        self.widget = None
-        self.position = (0,0)
         self.category = set()
 
     def category_matches(self,text:str)->bool:
@@ -210,72 +208,9 @@ class KanbanItem:
             self.category=set(self.category)
         self.position = (0,0)
 
-
-    # def reposition(self, depth:int=0, x = 0)->int:
-    #     """
-    #     Reposition the current item and its children so that it may 
-    #     be drawn as a tree.
-
-    #     :param depth: The depth of the current item
-    #     :param x: The lateral position of the current item
-    #     """
-    #     ox = x
-    #     for i in self.depends_on:
-    #         diff = i.reposition(depth+1, x)
-    #         print(f"diff={diff}")
-    #         x+=diff
-    #     else:
-    #         self.position=(x,depth)
-    #         return 1
-    #     if len(self.depends_on) > 1:
-    #         avg = sum(map(lambda x:x.position[0],self.depends_on))
-    #         avg /= len(self.depends_on)
-    #         self.position=(avg,depth)
-    #         diff = self.depends_on[-1].position[0] - self.depends_on[0].position[0]
-    #         if diff == 0:
-    #             print("0 Position increment D:")
-    #         print(f"{diff} position increment")
-    #         return x-ox
-    #     else:
-    #         self.position=(self.depends_on[0].position[0],depth)
-    #         return 1
-
-    def reposition(self,x:int=0,depth:int=0):
-        if self.position is not None:
-            print(f"double visited: {self.name}")
-            return x+1
-        if self.depends_on == []:
-            self.position=(x,depth)
-            return x+1
-
-
-        if len(self.depends_on)==1:
-            if self.depends_on[0].position is None:
-                x=self.depends_on[0].reposition(x,depth+1)
-                self.position=(self.depends_on[0].position[0],depth)
-            else:
-                self.position=(x, depth)
-            return x+1
-        else:
-            avgpos = 0 
-            avgcount = 0
-            largest = 0 
-            for i in self.depends_on:
-                if i.position is not None:
-                    if i.depends_on == []:
-                        i.position = (i.position[0],max(i.position[1],depth+1))
-                    continue
-                x=i.reposition(x,depth+1)
-                avgpos += i.position[0]
-                avgcount += 1
-                largest = x
-            avgpos //= avgcount
-            self.position = (avgpos,depth)
-            return largest+1
-
     def widget_of(self,widget:QWidget)->QWidget:
         for i in self.widget:
-            if i.parent() == widget:
+            if i.parent().parent() == widget or i.parent()== widget:
                 return i
 
     def markChanged(self):
@@ -407,7 +342,7 @@ class KanbanBoard:
             KanbanBoard.Encoder = KanbanBoardEncoder
         with open(filename,'w') as f:
             import json
-            f.write(json.dumps(self,cls=KanbanBoard.getSerializer()))
+            f.write(json.dumps(self,cls=KanbanBoard.Encoder))
 
     def _fix_missing(self)->None:
         """

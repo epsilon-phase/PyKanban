@@ -1,7 +1,10 @@
 from PySide2.QtWidgets import *
 from PySide2.QtGui import QPaintEvent,QPainter, QPainterPath
+from PySide2.QtCore import Signal
 from src.kanban import KanbanBoard, KanbanItem, ItemState
 from src.kanbanwidget import KanbanWidget
+from typing import *
+
 class TreeArea(QFrame):
     def __init__(self,parent=None,board=None):
         super(TreeArea,self).__init__(parent)
@@ -18,13 +21,17 @@ class TreeArea(QFrame):
         offset = QPointF(0, 5.0)
         for i in self.board.items:
             widget:QWidget = i.widget_of(self)
-            if not widget.isVisible():
+            widget = widget.parent()
+            if not widget.parent().isVisible():
                 continue
             pos1 = widget.pos()
             pos1.setX(pos1.x()+widget.size().width()//2)
             pos1.setY(pos1.y()+widget.size().height())
             for d in i.depends_on:
                 child:QWidget = d.widget_of(self)
+                child=child.parent()
+                if not child.isVisible():
+                    continue
                 pos2 = child.pos()
                 pos2.setX(pos2.x()+ child.size().width()//2)
                 path.moveTo(pos1)
@@ -39,8 +46,29 @@ class TreeArea(QFrame):
         painter.drawPath(path)
         super(TreeArea,self).paintEvent(event)
 
+class Collapser(QFrame):
+    collapseToggle = Signal(QFrame)
+    def __init__(self,parent=None):
+        super(Collapser,self).__init__(parent)
+
+        self.collapseButton = QPushButton(self.tr("Collapse"))
+        self.collapseButton.clicked.connect(self.toggle)
+        self.setLayout(QVBoxLayout())
+        self.layout().addWidget(self.collapseButton)
+        self.setSizePolicy(QSizePolicy.MinimumExpanding,QSizePolicy.MinimumExpanding)
+
+    def toggle(self):
+        if self.collapseButton.text() == self.tr("Collapse"):
+            self.collapseButton.setText(self.tr("Expand"))
+        else:
+            self.collapseButton.setText(self.tr("Collapse"))
+        self.collapseToggle.emit(self)
+
+
 class TreeView(QFrame):
-    board:KanbanBoard 
+    board:KanbanBoard
+    positions:dict[KanbanItem,Tuple[int,int]]
+    collapsed:set[KanbanItem]
     def __init__(self,parent:QWidget=None,board:KanbanBoard=None):
         super(TreeView,self).__init__(parent)
         assert board is not None
@@ -70,15 +98,23 @@ class TreeView(QFrame):
         scrl = QScrollArea()
         scrl.setWidget(display)
         scrl.setWidgetResizable(True)
+        self.scrl = scrl
         root.layout().addWidget(scrl)
+
         
         self.setLayout(root.layout())
+
+        self.positions = {}
+        self.collapsed = set()
         
 
     def addKanbanItem(self,k:KanbanItem)->None:
-        widget = KanbanWidget(self,k)
-        self.grd.addWidget(widget,0,0,1,1)
-        widget.setVisible(False)
+        container = Collapser(self)
+        widget = KanbanWidget(container,k)
+        container.layout().addWidget(widget)
+        self.grd.addWidget(container,0,0,1,1)
+        container.setVisible(False)
+        container.collapseToggle.connect(self.collapse)
         widget.setMinimumWidth(400)
         self.itemChoice.addItem(k.name,k)
         self.itemChoice.setItemData(self.itemChoice.count()-1,k,32)
@@ -87,28 +123,65 @@ class TreeView(QFrame):
         if self.finishedAdding:
             self.relayout(self.itemChoice.currentIndex())
 
+    def collapse(self,item:Collapser):
+        item = item.layout().itemAt(1).widget().item
+        print(item)
+        print(self.collapsed)
+        if item in self.collapsed:
+            self.collapsed.remove(item)
+        else:
+            self.collapsed.add(item)
+        self.relayout(self.itemChoice.currentIndex())
+        self.scrl.ensureWidgetVisible(item)
+
+    def reposition(self, k:KanbanItem,x:int=0,depth:int=0):
+        if k in self.positions:
+            print(f"double visited: {self.name}")
+            return x+1
+        if k.depends_on == [] or k in self.collapsed:
+            self.positions[k]=(x,depth)
+            return x+1
+        if len(k.depends_on)==1:
+            if k.depends_on[0] not in self.positions and k not in self.collapsed:
+                x=self.reposition(k.depends_on[0],x,depth+1)
+                self.positions[k]=(self.positions[k.depends_on[0]][0],depth)
+            else:
+                self.positions[k]=(x, depth)
+            return x+1
+        else:
+            avgpos = 0 
+            avgcount = 0
+            largest = 0 
+            for i in k.depends_on:
+                if i in self.positions :
+                    if i.depends_on == []:
+                        self.positions[i] = (self.positions[i][0],
+                                             max(self.positions[i][1],depth+1))
+                    continue
+                x=self.reposition(i,x,depth+1)
+                avgpos += self.positions[i][0]
+                avgcount += 1
+                largest = x
+            avgpos //= avgcount
+            self.positions[k] = (avgpos,depth)
+            return largest+1
+
+
     def relayout(self,index):
         items = self.findChildren(KanbanWidget)
-        self.board.resetPositions()
+        self.positions.clear()
         item = self.itemChoice.currentData(32)
         if item is None:
             return
-        item.reposition()
+        self.reposition(item)
         for i in items:
-            show = i.item.position is not None
-            i.setVisible(show)
+            show = i.item in self.positions
+            i.parent().setVisible(show)
             i.setEnabled(show)
             if show:
-                self.grd.removeWidget(i)
-                self.grd.addWidget(i,i.item.position[1],i.item.position[0],1,1)
-        seen = set()
-        for i in items:
-            if i.item.position is None:
-                continue
-            if i.item.position in seen:
-                print("Found position with more than one widget D:")
-
-            seen.add(i.item.position)
+                self.grd.removeWidget(i.parent())
+                self.grd.addWidget(i.parent(),self.positions[i.item][1],self.positions[i.item][0],1,1)
+        self.display.repaint()
 
 
 
