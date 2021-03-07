@@ -67,8 +67,8 @@ class Collapser(QFrame):
 
 class TreeView(QFrame):
     board:KanbanBoard
-    positions:dict[KanbanItem,Tuple[int,int]]
-    collapsed:set[KanbanItem]
+    positions:Dict[KanbanItem,Tuple[int,int]]
+    collapsed:Set[KanbanItem]
     def __init__(self,parent:QWidget=None,board:KanbanBoard=None):
         super(TreeView,self).__init__(parent)
         assert board is not None
@@ -182,6 +182,7 @@ class TreeView(QFrame):
                 self.grd.removeWidget(i.parent())
                 self.grd.addWidget(i.parent(),self.positions[i.item][1],self.positions[i.item][0],1,1)
         self.display.repaint()
+        self.positions.clear()
 
 
 

@@ -47,7 +47,7 @@ def as_kanban_board(dct:dict):
         return dct
 
 class KanbanBoardEncoder(JSONEncoder):
-    def encodeItem(self,item:KanbanItem,ids:dict[KanbanItem,int])->Dict[str,Any]:
+    def encodeItem(self,item:KanbanItem,ids:Dict[KanbanItem,int])->Dict[str,Any]:
         result:dict[str,Any] = {}
         result['id']=ids[item]
         result['category']=list(item.category)
