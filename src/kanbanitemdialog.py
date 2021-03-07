@@ -251,8 +251,7 @@ class KanbanItemDialog(QDialog):
         item.depends_on.clear()
         for i in range(self.dependencyList.count()):
             item.depends_on.append(self.dependencyList.item(i).data(32))
-        dependentsOf = map(lambda x:x.data(32), [self.dependentsOfList.item(i) for i in range(self.dependentsOfList.count())])
-        dependentsOf = list(dependentsOf)
+        dependentsOf = list(map(lambda x:x.data(32), [self.dependentsOfList.item(i) for i in range(self.dependentsOfList.count())]))
 
         for i in self.board.dependents_of(self.item):
             if item not in dependentsOf:
@@ -321,8 +320,8 @@ class KanbanItemDialog(QDialog):
         if self.board is None:
             return
         for i in self.board.items:
-            if i.completed:
-                continue
+            # if i.completed:
+                # continue
             if i in self.item.depends_on or i is self.item:
                 continue
             if self.item in i.depends_on:

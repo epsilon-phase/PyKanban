@@ -123,7 +123,13 @@ class KanbanWidget(QFrame):
         createChildButton.setToolTip(self.tr("Create Child task"))
         createChildButton.clicked.connect(self.createChildTask)
 
+        complete = QPushButton(self.tr("Uncomplete" if self.item.completed else "Complete"))
+        complete.clicked.connect(self.complete)
+        self.completeButton = complete
+
+
         buttonContainer.layout().addWidget(createChildButton)
+        buttonContainer.layout().addWidget(complete)
 
         layout.addWidget(buttonContainer)
 
@@ -131,7 +137,11 @@ class KanbanWidget(QFrame):
 
 
 
-
+    def complete(self):
+        self.item.completed=not self.item.completed
+        self.updateDisplay()
+        self.changed.emit(self, Priority.INVALID, self.item.state())
+        self.completeButton.setText(self.tr("Uncomplete" if self.item.completed else "Complete"))
 
     def updateDisplay(self):
         """

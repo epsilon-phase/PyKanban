@@ -61,6 +61,7 @@ class KanbanItem:
         self.assigned = None
         self.board = board
         self.category = set()
+        self.widget = []
 
     def category_matches(self,text:str)->bool:
         """
@@ -392,7 +393,6 @@ class KanbanBoard:
             with open(filename,'rb') as f:
                 c=pickle.load(f)
                 c._fix_missing()
-               
                 return c
 
     @staticmethod
@@ -404,3 +404,35 @@ class KanbanBoard:
             return json.load(f,object_hook=KanbanBoard.Decoder)
 
 
+    def toGraphViz(self)->str:
+        """
+        Create a directed graph based on the current item tree.
+
+        :returns: The a string with the dot language 
+        corresponding to the kanbanboard
+        """
+        lines = ["digraph G{"]
+        ids = {v:idx for idx,v in enumerate(self.items)}
+        for i in self.items:
+            desc = i.description.replace("\n","<br/>")
+            color=""
+            if i.completed:
+                color='green'
+            elif i.state() == ItemState.BLOCKED:
+                color='red'
+
+            if color != '':
+                color=f"bgcolor=\"{color}\""
+            table = f"<TABLE {color}><tr><td>{i.name}</td></tr>"
+            if i.description != "":
+                table+=f"<tr><td>{desc}</td></tr>"
+            table+="</TABLE>"
+            declaration = f"""
+            \t{ids[i]}[shape=none,label=<{table}>]
+            """
+            lines.append(declaration)
+        for i in self.items:
+            edges = f"{ids[i]} -> {{{','.join([str(ids[j]) for j in i.depends_on])}}};"
+            lines.append(edges)
+        lines+=["}"]
+        return "\n".join(lines)

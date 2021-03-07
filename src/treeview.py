@@ -9,6 +9,8 @@ class TreeArea(QFrame):
     def __init__(self,parent=None,board=None):
         super(TreeArea,self).__init__(parent)
         self.board=board
+        self.lastLen=0
+        self.widgets={}
 
     def paintEvent(self,event:QPaintEvent):
         """
@@ -19,8 +21,12 @@ class TreeArea(QFrame):
         painter =QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         offset = QPointF(0, 5.0)
+        if len(self.board.items)!=self.lastLen:
+            self.widgets = {x:x.widget_of(self) for x in self.board.items}
+            self.lastLen=len(self.board.items)
+        widgets=self.widgets
         for i in self.board.items:
-            widget:QWidget = i.widget_of(self)
+            widget = widgets[i]
             widget = widget.parent()
             if not widget.parent().isVisible():
                 continue
@@ -28,7 +34,7 @@ class TreeArea(QFrame):
             pos1.setX(pos1.x()+widget.size().width()//2)
             pos1.setY(pos1.y()+widget.size().height())
             for d in i.depends_on:
-                child:QWidget = d.widget_of(self)
+                child:QWidget = widgets[d]
                 child=child.parent()
                 if not child.isVisible():
                     continue
