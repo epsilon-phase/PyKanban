@@ -123,8 +123,8 @@ class TreeView(QFrame):
         if self.finishedAdding:
             self.relayout(self.itemChoice.currentIndex())
 
-    def collapse(self,item:Collapser):
-        item = item.layout().itemAt(1).widget().item
+    def collapse(self,collapser:Collapser):
+        item = collapser.layout().itemAt(1).widget().item
         print(item)
         print(self.collapsed)
         if item in self.collapsed:
@@ -132,7 +132,7 @@ class TreeView(QFrame):
         else:
             self.collapsed.add(item)
         self.relayout(self.itemChoice.currentIndex())
-        self.scrl.ensureWidgetVisible(item)
+        self.scrl.ensureWidgetVisible(collapser.layout().itemAt(1).widget())
 
     def reposition(self, k:KanbanItem,x:int=0,depth:int=0):
         if k in self.positions:

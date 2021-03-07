@@ -206,7 +206,7 @@ class KanbanItem:
             print("Filled in missing category set")
         if isinstance(self.category,list):
             self.category=set(self.category)
-        self.position = (0,0)
+
 
     def widget_of(self,widget:QWidget)->QWidget:
         for i in self.widget:
