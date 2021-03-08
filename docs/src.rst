@@ -67,6 +67,12 @@ src.taskcategory module
    :undoc-members:
    :show-inheritance:
 
+src.treeview module
+----------------------
+.. automodule:: src.treeview
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Module contents
 ---------------

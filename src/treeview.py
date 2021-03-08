@@ -1,6 +1,6 @@
 from PySide2.QtWidgets import *
 from PySide2.QtGui import QPaintEvent,QPainter, QPainterPath
-from PySide2.QtCore import Signal, QTimer
+from PySide2.QtCore import Signal, QTimer,Qt
 from src.kanban import KanbanBoard, KanbanItem, ItemState
 from src.kanbanwidget import KanbanWidget
 from typing import *
@@ -25,6 +25,7 @@ class TreeArea(QFrame):
             self.widgets = {x:x.widget_of(self) for x in self.board.items}
             self.lastLen=len(self.board.items)
         widgets=self.widgets
+
         for i in self.board.items:
             widget = widgets[i]
             widget = widget.parent()
@@ -90,7 +91,11 @@ class TreeView(QFrame):
         self.itemChoice=QComboBox()
         self.itemChoice.currentIndexChanged.connect(self.relayout)
         headerFrame.layout().addRow(self.tr("Root:"),self.itemChoice)
+        self.hiding_completed = QCheckBox(self.tr("Hide Completed tasks"))
+        self.hiding_completed.stateChanged.connect(self.change_hiding)
+        headerFrame.layout().addWidget(self.hiding_completed)
         headerFrame.setSizePolicy(QSizePolicy.Maximum,QSizePolicy.Maximum)
+
         root.layout().addWidget(headerFrame)
 
         display = TreeArea(self,board)
@@ -113,6 +118,12 @@ class TreeView(QFrame):
 
         self.positions = {}
         self.collapsed = set()
+        self.completed = set()
+        self.hide_completed = False
+
+    def change_hiding(self,state):
+        self.hide_completed = state == Qt.Checked
+        self.relayout()
 
     def addKanbanItem(self,k:KanbanItem)->None:
         container = Collapser(self)
@@ -131,10 +142,17 @@ class TreeView(QFrame):
 
 
     def collapse(self,collapser:Collapser):
+        """
+        Handle a widget signalling that it should be collapsed,
+        that is:
+
+        1. Add the widget's kanbanitem to the collapsed set
+        2. Reassign the positions of each item
+        3. Queue a timer event to ensure that the recently collapsed
+           widget is still in the viewport
+        """
         from functools import partial
         item = collapser.layout().itemAt(1).widget().item
-        print(item)
-        print(self.collapsed)
         if item in self.collapsed:
             self.collapsed.remove(item)
         else:
@@ -145,21 +163,46 @@ class TreeView(QFrame):
         QTimer.singleShot(1,partial(self.scrl.ensureWidgetVisible,collapser))
 
 
+    def determine_efficiency(self):
+        max_x=0
+        max_y=0
+        for (x,y) in self.positions.values():
+            max_x=max(max_x,x)
+            max_y=max(max_y,y)
+        print(f"Layout Efficiency: {100*(len(self.positions)/(max_x*max_y))}%")
 
-    def reposition(self, k:KanbanItem,x:int=0,depth:int=0):
+    def reposition(self, k:KanbanItem,x:int=0,depth:int=0)->Tuple[int,bool]:
+        """
+
+        See :doc:`dag_layout` for a more intensive discussion of the issues
+        at play here.
+        
+        Iterate across the graph comprising the kanbanboard,
+        setting each item's position.
+
+        :param k: The current item being positions
+        :param x: The horizontal coordinate currently being assigned
+        :param depth: The vertical coordinate currently being assigned
+        :returns: The next available horizontal coordinate
+        """
+        completed = False
+        if k.state() == ItemState.COMPLETED:
+            completed=True
         if k in self.positions:
             print(f"double visited: {self.name}")
-            return x+1
-        if k.depends_on == [] or k in self.collapsed:
+            return x+1, completed
+        if k.depends_on == [] or k in self.collapsed or (completed and self.hide_completed):
             self.positions[k]=(x,depth)
-            return x+1
+            return x+1, completed
         if len(k.depends_on)==1:
-            if k.depends_on[0] not in self.positions and k not in self.collapsed:
-                x=self.reposition(k.depends_on[0],x,depth+1)
+            if k.depends_on[0] not in self.positions:
+                x,c=self.reposition(k.depends_on[0],x,depth+1)
+                if completed and c:
+                    self.completed.add(k)
                 self.positions[k]=(self.positions[k.depends_on[0]][0],depth)
             else:
                 self.positions[k]=(x, depth)
-            return x+1
+            return x+1, k in self.completed
         else:
             avgpos = 0 
             avgcount = 0
@@ -170,21 +213,26 @@ class TreeView(QFrame):
                         self.positions[i] = (self.positions[i][0],
                                              max(self.positions[i][1],depth+1))
                     continue
-                x=self.reposition(i,x,depth+1)
+                x,c=self.reposition(i,x,depth+1)
+                completed = completed and c
                 avgpos += self.positions[i][0]
                 avgcount += 1
                 largest = x
             avgpos //= avgcount
             self.positions[k] = (avgpos,depth)
-            return largest+1
+            return largest+1, completed
 
 
-    def relayout(self,index):
+    def relayout(self,index=None):
+        if index is None:
+            index = self.itemChoice.currentIndex()
         items = self.findChildren(KanbanWidget)
         self.positions.clear()
+        self.completed.clear()
         item = self.itemChoice.currentData(32)
         if item is None:
             return
+
         self.reposition(item)
         for i in items:
             show = i.item in self.positions
@@ -194,6 +242,7 @@ class TreeView(QFrame):
                 self.grd.removeWidget(i.parent())
                 self.grd.addWidget(i.parent(),self.positions[i.item][1],self.positions[i.item][0],1,1)
         self.display.update()
+        self.determine_efficiency()
         self.positions.clear()
 
 
