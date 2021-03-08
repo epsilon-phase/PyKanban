@@ -20,7 +20,7 @@ class TreeArea(QFrame):
         path = QPainterPath(QPointF(0,0))
         painter =QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        offset = QPointF(0, 5.0)
+        offset = 5.0
         if len(self.board.items)!=self.lastLen:
             self.widgets = {x:x.widget_of(self) for x in self.board.items}
             self.lastLen=len(self.board.items)
@@ -30,22 +30,22 @@ class TreeArea(QFrame):
             widget = widget.parent()
             if not widget.parent().isVisible():
                 continue
-            pos1 = widget.pos()
-            pos1.setX(pos1.x()+widget.size().width()//2)
-            pos1.setY(pos1.y()+widget.size().height())
+            x1, y1 = widget.pos().x(), widget.pos().y()
+            x1 = x1+ widget.size().width()//2
+            y1 = y1 + widget.size().height()
             for d in i.depends_on:
                 child:QWidget = widgets[d]
                 child=child.parent()
                 if not child.isVisible():
                     continue
-                pos2 = child.pos()
-                pos2.setX(pos2.x()+ child.size().width()//2)
-                path.moveTo(pos1)
-                path.lineTo(QPointF(pos1.x(),pos1.y()+offset.y()))
-                path.lineTo(QPointF(pos2.x(),pos2.y()-offset.y()))
-                path.lineTo(pos2)
-                pos = path.currentPosition()
-                path.addEllipse(pos.x()-2.5,pos.y()-2.5,5,5)
+                x2, y2 = child.pos().x(), child.pos().y()
+                x2 = x2 + child.size().width() // 2
+                path.moveTo(x1,y1)
+                path.lineTo(x1, y1 + offset)
+                path.lineTo(x2, y1 + offset)
+                path.lineTo(x2, y2 - offset)
+                path.lineTo(x2, y2)
+                path.addEllipse(x2-2.5,y2-2.5,5,5)
         p = painter.pen()
         p.setWidthF(1.5)
         painter.setPen(p)
@@ -62,6 +62,7 @@ class Collapser(QFrame):
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(self.collapseButton)
         self.setSizePolicy(QSizePolicy.MinimumExpanding,QSizePolicy.MinimumExpanding)
+        self.layout().setMargin(0)
 
     def toggle(self):
         if self.collapseButton.text() == self.tr("Collapse"):
@@ -138,6 +139,7 @@ class TreeView(QFrame):
         else:
             self.collapsed.add(item)
         self.relayout(self.itemChoice.currentIndex())
+        self.display.update()
         self.scrl.ensureWidgetVisible(collapser.layout().itemAt(1).widget())
 
     def reposition(self, k:KanbanItem,x:int=0,depth:int=0):
