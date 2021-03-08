@@ -1,6 +1,6 @@
 from PySide2.QtWidgets import *
 from PySide2.QtGui import QPaintEvent,QPainter, QPainterPath
-from PySide2.QtCore import Signal
+from PySide2.QtCore import Signal, QTimer
 from src.kanban import KanbanBoard, KanbanItem, ItemState
 from src.kanbanwidget import KanbanWidget
 from typing import *
@@ -113,7 +113,6 @@ class TreeView(QFrame):
 
         self.positions = {}
         self.collapsed = set()
-        
 
     def addKanbanItem(self,k:KanbanItem)->None:
         container = Collapser(self)
@@ -130,7 +129,9 @@ class TreeView(QFrame):
         if self.finishedAdding:
             self.relayout(self.itemChoice.currentIndex())
 
+
     def collapse(self,collapser:Collapser):
+        from functools import partial
         item = collapser.layout().itemAt(1).widget().item
         print(item)
         print(self.collapsed)
@@ -139,8 +140,11 @@ class TreeView(QFrame):
         else:
             self.collapsed.add(item)
         self.relayout(self.itemChoice.currentIndex())
-        self.display.update()
-        self.scrl.ensureWidgetVisible(collapser.layout().itemAt(1).widget())
+        #Due to the way that widget size/position are calculated, this
+        #is, unfortunately, necessary.
+        QTimer.singleShot(1,partial(self.scrl.ensureWidgetVisible,collapser))
+
+
 
     def reposition(self, k:KanbanItem,x:int=0,depth:int=0):
         if k in self.positions:
@@ -189,7 +193,7 @@ class TreeView(QFrame):
             if show:
                 self.grd.removeWidget(i.parent())
                 self.grd.addWidget(i.parent(),self.positions[i.item][1],self.positions[i.item][0],1,1)
-        self.display.repaint()
+        self.display.update()
         self.positions.clear()
 
 
