@@ -235,7 +235,8 @@ class KanbanItemDialog(QDialog):
         return i.name!= self.nameEdit.text() \
                or i.description!= self.descEdit.toPlainText() \
                or self.addAtEnd \
-               or i.completed != (self.completed.checkState()==Qt.Checked)
+               or i.completed != (self.completed.checkState()==Qt.Checked) \
+               or self.category_changeset != {}
 
     def updateItem(self)->None:
         """

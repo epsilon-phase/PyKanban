@@ -1,6 +1,6 @@
 from PySide2.QtWidgets import *
 from PySide2.QtGui import QPaintEvent,QPainter, QPainterPath
-from PySide2.QtCore import Signal, QTimer,Qt
+from PySide2.QtCore import Signal, QTimer,Qt,QEvent
 from src.kanban import KanbanBoard, KanbanItem, ItemState
 from src.kanbanwidget import KanbanWidget
 from typing import *
@@ -71,6 +71,18 @@ class Collapser(QFrame):
         else:
             self.collapseButton.setText(self.tr("Collapse"))
         self.collapseToggle.emit(self)
+
+    def event(self,event:QEvent):
+        if event.type() == QEvent.LayoutRequest and self.layout().count()==1:
+            self.deleteLater()
+            self.parent().layout().removeWidget(self)
+            p = self
+            while not isinstance(p,TreeView):
+                p=p.parent()
+            p.relayout()
+            return True
+        return super(Collapser,self).event(event)
+
 
 
 class TreeView(QFrame):
@@ -185,24 +197,28 @@ class TreeView(QFrame):
         :param depth: The vertical coordinate currently being assigned
         :returns: The next available horizontal coordinate
         """
+        currentpos = None
+        ret:Tuple[int,bool] = 0,False
         completed = False
         if k.state() == ItemState.COMPLETED:
             completed=True
         if k in self.positions:
             print(f"double visited: {self.name}")
-            return x+1, completed
-        if k.depends_on == [] or k in self.collapsed or (completed and self.hide_completed):
-            self.positions[k]=(x,depth)
-            return x+1, completed
-        if len(k.depends_on)==1:
+            ret = (x+1,completed)
+        elif k.depends_on == [] or k in self.collapsed or (completed and self.hide_completed):
+            currentpos = (x,depth)
+            ret = x+1, completed
+        elif len(k.depends_on)==1:
             if k.depends_on[0] not in self.positions:
                 x,c=self.reposition(k.depends_on[0],x,depth+1)
                 if completed and c:
                     self.completed.add(k)
-                self.positions[k]=(self.positions[k.depends_on[0]][0],depth)
+                currentpos = (self.positions[k.depends_on[0]][0],depth)
+                ret = currentpos[0]+1, completed
             else:
+                currentpos = x,depth
                 self.positions[k]=(x, depth)
-            return x+1, k in self.completed
+                ret = x+1, completed
         else:
             avgpos = 0 
             avgcount = 0
@@ -218,29 +234,59 @@ class TreeView(QFrame):
                 avgpos += self.positions[i][0]
                 avgcount += 1
                 largest = x
-            avgpos //= avgcount
-            self.positions[k] = (avgpos,depth)
-            return largest+1, completed
+            if avgcount == 0:
+                self.position[k] = (x,depth)
+                currentpos = x,depth
+                ret = x+1, completed
+            else:
+                avgpos //= avgcount
+                currentpos = (avgpos,depth)
+                ret = largest+1, completed
+        # Nudge the item a space over. Should, in general, avoid issues.
+        if currentpos is not None:
+            if currentpos in self.positions.values():
+                print("Nudging")
+                currentpos=currentpos[0]+1,currentpos[1]
+            self.positions[k] = currentpos
+        return ret
 
+    def check_overlap(self):
+        seen = set()
+        for pos in self.positions.values():
+            if pos in seen:
+                print("Found doubled up position")
+            seen.add(pos)
+
+    def remove_deleted(self):
+        items = self.findChildren(Collapser)
+        items = filter(lambda x:x.layout().count()==1,items)
+        for i in items:
+            self.layout().removeWidget(i)
+            i.deleteLater()
 
     def relayout(self,index=None):
         if index is None:
             index = self.itemChoice.currentIndex()
         items = self.findChildren(KanbanWidget)
+        self.remove_deleted()
         self.positions.clear()
         self.completed.clear()
         item = self.itemChoice.currentData(32)
         if item is None:
             return
-
         self.reposition(item)
+        self.check_overlap()
+        self.display.setUpdatesEnabled(False)
         for i in items:
             show = i.item in self.positions
             i.parent().setVisible(show)
             i.setEnabled(show)
             if show:
                 self.grd.removeWidget(i.parent())
-                self.grd.addWidget(i.parent(),self.positions[i.item][1],self.positions[i.item][0],1,1)
+                pos = self.positions[i.item]
+
+                self.grd.addWidget(i.parent(),pos[1],pos[0],1,1)
+        self.display.setUpdatesEnabled(True)
         self.display.update()
         self.determine_efficiency()
         self.positions.clear()
