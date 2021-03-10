@@ -50,7 +50,6 @@ class KanbanItem:
     #: The set of categories this task is under
     category: Set[str]
     __slots__=('completed','board','priority','name','depends_on','description','assigned','widget', 'category')
-    __weakref__=('widget')
     def __init__(self, name, description,board:KanbanBoard=None,priority=Priority.MEDIUM):
         self.priority=priority
         self.name=name

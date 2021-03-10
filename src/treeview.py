@@ -17,6 +17,7 @@ class TreeArea(QFrame):
         Draw lines to denote each item's parents/children
         """
         from PySide2.QtCore import QPointF
+        from collections import defaultdict
         path = QPainterPath(QPointF(0,0))
         painter =QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -34,6 +35,8 @@ class TreeArea(QFrame):
             x1, y1 = widget.pos().x(), widget.pos().y()
             x1 = x1+ widget.size().width()//2
             y1 = y1 + widget.size().height()
+            # Offset each edge by a different amount for each child
+            offmod = 0
             for d in i.depends_on:
                 child:QWidget = widgets[d]
                 child=child.parent()
@@ -42,18 +45,20 @@ class TreeArea(QFrame):
                 x2, y2 = child.pos().x(), child.pos().y()
                 x2 = x2 + child.size().width() // 2
                 path.moveTo(x1,y1)
-                path.lineTo(x1, y1 + offset)
-                path.lineTo(x2, y1 + offset)
-                path.lineTo(x2, y2 - offset)
+                path.lineTo(x1, y1 + offset + offmod)
+                path.lineTo(x2, y1 + offset + offmod)
+                path.lineTo(x2, y2 - offset + offmod)
                 path.lineTo(x2, y2)
                 path.addEllipse(x2-2.5,y2-2.5,5,5)
+                offmod += 2
+                offmod %= 30
         p = painter.pen()
         p.setWidthF(1.5)
         painter.setPen(p)
         painter.drawPath(path)
         super(TreeArea,self).paintEvent(event)
 
-class Collapser(QFrame):
+class Collapser(QWidget):
     collapseToggle = Signal(QFrame)
     def __init__(self,parent=None):
         super(Collapser,self).__init__(parent)
@@ -83,12 +88,27 @@ class Collapser(QFrame):
             return True
         return super(Collapser,self).event(event)
 
+    def toggleButtonShown(self, show):
+        self.collapseButton.setVisible(show)
 
 
-class TreeView(QFrame):
+
+
+class TreeView(QWidget):
     board:KanbanBoard
     positions:Dict[KanbanItem,Tuple[int,int]]
     collapsed:Set[KanbanItem]
+    itemChoice:QComboBox
+    hiding_completed:QCheckBox
+    extraCompactCheckbox:QCheckBox
+
+    @property
+    def extraCompact(self)->bool:
+        """
+        Returns true if the extra compact checkbox is checked.
+        """
+        return self.extraCompactCheckbox.isChecked()
+
     def __init__(self,parent:QWidget=None,board:KanbanBoard=None):
         super(TreeView,self).__init__(parent)
         assert board is not None
@@ -107,6 +127,11 @@ class TreeView(QFrame):
         self.hiding_completed.stateChanged.connect(self.change_hiding)
         headerFrame.layout().addWidget(self.hiding_completed)
         headerFrame.setSizePolicy(QSizePolicy.Maximum,QSizePolicy.Maximum)
+
+        self.extraCompactCheckbox = QCheckBox(self.tr("Extra Compact"))
+        self.extraCompactCheckbox.stateChanged.connect(lambda _:self.relayout())
+        self.extraCompactCheckbox.setToolTip(self.tr("Make the tree more compact, potentially at the cost of readability"))
+        headerFrame.layout().addWidget(self.extraCompactCheckbox)
 
         root.layout().addWidget(headerFrame)
 
@@ -147,8 +172,6 @@ class TreeView(QFrame):
         widget.setMinimumWidth(400)
         self.itemChoice.addItem(k.name,k)
         self.itemChoice.setItemData(self.itemChoice.count()-1,k,32)
-        print(k)
-        print(f"Length of children: {len(self.display.children())}")
         if self.finishedAdding:
             self.relayout(self.itemChoice.currentIndex())
 
@@ -206,7 +229,10 @@ class TreeView(QFrame):
             print(f"double visited: {self.name}")
             ret = (x+1,completed)
         elif k.depends_on == [] or k in self.collapsed or (completed and self.hide_completed):
-            currentpos = (x,depth)
+            if k.depends_on == [] and completed and self.hide_completed:
+                pass
+            else:
+                currentpos = (x,depth)
             ret = x+1, completed
         elif len(k.depends_on)==1:
             if k.depends_on[0] not in self.positions:
@@ -222,20 +248,31 @@ class TreeView(QFrame):
         else:
             avgpos = 0 
             avgcount = 0
-            largest = 0 
+            largest = 0
+            if self.extraCompact:
+                viable = list(filter(lambda x: x not in self.positions,k.depends_on))
+                for z in range(x,max(0,x-len(viable)//2),-1):
+                    if (z, depth+1) in self.positions.values():
+                        break
+                    x = z
             for i in k.depends_on:
                 if i in self.positions :
                     if i.depends_on == []:
-                        self.positions[i] = (self.positions[i][0],
-                                             max(self.positions[i][1],depth+1))
+                        pos = (self.positions[i][0],
+                               max(self.positions[i][1],depth+1))
+                        if pos not in self.positions.values():
+                            self.positions[i] = pos
                     continue
-                x,c=self.reposition(i,x,depth+1)
+                x2,c=self.reposition(i,x,depth+1)
+                if i not in self.positions:
+                    continue
+                x = max(x2,x)
                 completed = completed and c
                 avgpos += self.positions[i][0]
                 avgcount += 1
                 largest = x
             if avgcount == 0:
-                self.position[k] = (x,depth)
+                self.positions[k] = (x,depth)
                 currentpos = x,depth
                 ret = x+1, completed
             else:
@@ -248,13 +285,15 @@ class TreeView(QFrame):
                 print("Nudging")
                 currentpos=currentpos[0]+1,currentpos[1]
             self.positions[k] = currentpos
+        if completed:
+            self.completed.add(k)
         return ret
 
-    def check_overlap(self):
+    def check_overlap(self)->None:
         seen = set()
-        for pos in self.positions.values():
+        for item,pos in self.positions.items():
             if pos in seen:
-                print("Found doubled up position")
+                print(f"Found doubled up position {item.name}")
             seen.add(pos)
 
     def remove_deleted(self):
@@ -267,7 +306,7 @@ class TreeView(QFrame):
     def relayout(self,index=None):
         if index is None:
             index = self.itemChoice.currentIndex()
-        items = self.findChildren(KanbanWidget)
+        items:List[KanbanWidget] = self.findChildren(KanbanWidget)
         self.remove_deleted()
         self.positions.clear()
         self.completed.clear()
@@ -276,6 +315,8 @@ class TreeView(QFrame):
             return
         self.reposition(item)
         self.check_overlap()
+        # Just in case the update takes a long time,
+        # Don't draw during this time
         self.display.setUpdatesEnabled(False)
         for i in items:
             show = i.item in self.positions
@@ -284,8 +325,8 @@ class TreeView(QFrame):
             if show:
                 self.grd.removeWidget(i.parent())
                 pos = self.positions[i.item]
-
                 self.grd.addWidget(i.parent(),pos[1],pos[0],1,1)
+                i.parent().toggleButtonShown(len(i.item.depends_on)>0)
         self.display.setUpdatesEnabled(True)
         self.display.update()
         self.determine_efficiency()

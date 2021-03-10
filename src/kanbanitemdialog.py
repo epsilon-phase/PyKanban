@@ -202,7 +202,6 @@ class KanbanItemDialog(QDialog):
         self.accept_button.clicked.connect(self.accept)
         self.cancel_button.clicked.connect(self.reject)
         self.delete_button.clicked.connect(self.deleteItem)
-        # self.delete_button.clicked.connect(self.reject)
 
 
         container = QFrame()
