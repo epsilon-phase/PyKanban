@@ -199,6 +199,8 @@ class TreeView(QWidget):
 
 
     def determine_efficiency(self):
+        if len(self.positions) == 0:
+            return
         max_x=0
         max_y=0
         for (x,y) in self.positions.values():
