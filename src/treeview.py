@@ -102,12 +102,7 @@ class TreeView(QWidget):
     hiding_completed:QCheckBox
     extraCompactCheckbox:QCheckBox
 
-    @property
-    def extraCompact(self)->bool:
-        """
-        Returns true if the extra compact checkbox is checked.
-        """
-        return self.extraCompactCheckbox.isChecked()
+
 
     def __init__(self,parent:QWidget=None,board:KanbanBoard=None):
         super(TreeView,self).__init__(parent)
@@ -124,7 +119,7 @@ class TreeView(QWidget):
         self.itemChoice.currentIndexChanged.connect(self.relayout)
         headerFrame.layout().addRow(self.tr("Root:"),self.itemChoice)
         self.hiding_completed = QCheckBox(self.tr("Hide Completed tasks"))
-        self.hiding_completed.stateChanged.connect(self.change_hiding)
+        self.hiding_completed.stateChanged.connect(self.relayout)
         headerFrame.layout().addWidget(self.hiding_completed)
         headerFrame.setSizePolicy(QSizePolicy.Maximum,QSizePolicy.Maximum)
 
@@ -156,11 +151,17 @@ class TreeView(QWidget):
         self.positions = {}
         self.collapsed = set()
         self.completed = set()
-        self.hide_completed = False
 
-    def change_hiding(self,state):
-        self.hide_completed = state == Qt.Checked
-        self.relayout()
+    @property
+    def hide_completed(self)->bool:
+        return self.hiding_completed.isChecked()
+
+    @property
+    def extraCompact(self)->bool:
+        """
+        Returns true if the extra compact checkbox is checked.
+        """
+        return self.extraCompactCheckbox.isChecked()
 
     def addKanbanItem(self,k:KanbanItem)->None:
         container = Collapser(self)
@@ -199,13 +200,13 @@ class TreeView(QWidget):
 
 
     def determine_efficiency(self):
-        if len(self.positions) == 0:
-            return
         max_x=0
         max_y=0
         for (x,y) in self.positions.values():
             max_x=max(max_x,x)
             max_y=max(max_y,y)
+        if max_x == 0 or max_y == 0:
+            return
         print(f"Layout Efficiency: {100*(len(self.positions)/(max_x*max_y))}%")
 
     def reposition_multi_child(self, k:KanbanItem, completed:bool, x:int,depth:int)->Tuple[Tuple[int,int],Tuple[int,bool]]:
