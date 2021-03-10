@@ -206,6 +206,54 @@ class TreeView(QWidget):
             max_y=max(max_y,y)
         print(f"Layout Efficiency: {100*(len(self.positions)/(max_x*max_y))}%")
 
+    def reposition_multi_child(self, k:KanbanItem, completed:bool, x:int,depth:int)->Tuple[Tuple[int,int],Tuple[int,bool]]:
+        """
+        Single case of reposition, for when the task has more than one dependency
+
+        :param k: The kanbanitem being considered
+        :param completed: Whether it is possible for this to be completed for the purposes of layout
+        :param x: The horizontal coordinate to be considered initially
+        :param depth: The current vertical coordinate to be considered
+
+        :returns: The resulting position of the task, the next x coordinate, 
+            and whether or not the task should be considered completed for the
+            purposes of layout
+        """
+        # Variables for centering the parent node over the children
+        avgpos = 0
+        avgcount = 0
+        largest = 0
+        viable = list(filter(lambda x: x not in self.positions,k.depends_on))
+        non_viable = filter(lambda x: x in self.positions and x.depends_on == [], k.depends_on)
+        if self.extraCompact:
+            for z in range(x,max(0,x-len(viable)//2),-1):
+                if (z, depth+1) in self.positions.values():
+                    break
+                x = z
+        for i in viable:
+            x2,c=self.reposition(i,x,depth+1)
+            if i not in self.positions:
+                continue
+            x = max(x2,x)
+            completed = completed and c
+            avgpos += self.positions[i][0]
+            avgcount += 1
+            largest = x
+        if avgcount == 0:
+            self.positions[k] = (x,depth)
+            currentpos = x,depth
+            ret = x+1, completed
+        else:
+            avgpos //= avgcount
+            currentpos = (avgpos,depth)
+            ret = largest+1, completed
+        for i in non_viable:
+            pos = self.positions[i][0], max(self.positions[i][1],depth+1)
+            if pos not in self.positions.values():
+                self.positions[i]=pos
+        return currentpos, ret
+
+
     def reposition(self, k:KanbanItem,x:int=0,depth:int=0)->Tuple[int,bool]:
         """
 
@@ -245,41 +293,10 @@ class TreeView(QWidget):
                 currentpos = x,depth
                 self.positions[k]=(x, depth)
                 ret = x+1, completed
-        else:
-            avgpos = 0 
-            avgcount = 0
-            largest = 0
-            if self.extraCompact:
-                viable = list(filter(lambda x: x not in self.positions,k.depends_on))
-                for z in range(x,max(0,x-len(viable)//2),-1):
-                    if (z, depth+1) in self.positions.values():
-                        break
-                    x = z
-            for i in k.depends_on:
-                if i in self.positions :
-                    if i.depends_on == []:
-                        pos = (self.positions[i][0],
-                               max(self.positions[i][1],depth+1))
-                        if pos not in self.positions.values():
-                            self.positions[i] = pos
-                    continue
-                x2,c=self.reposition(i,x,depth+1)
-                if i not in self.positions:
-                    continue
-                x = max(x2,x)
-                completed = completed and c
-                avgpos += self.positions[i][0]
-                avgcount += 1
-                largest = x
-            if avgcount == 0:
-                self.positions[k] = (x,depth)
-                currentpos = x,depth
-                ret = x+1, completed
-            else:
-                avgpos //= avgcount
-                currentpos = (avgpos,depth)
-                ret = largest+1, completed
-        # Nudge the item a space over. Should, in general, avoid issues.
+        else: #Multiple children
+            currentpos, (x,completed)= self.reposition_multi_child(k,completed,x,depth)
+            ret = x, completed
+        # Nudge the item a space over if necessary. Should, in general, avoid issues.
         if currentpos is not None:
             if currentpos in self.positions.values():
                 print("Nudging")
@@ -328,7 +345,7 @@ class TreeView(QWidget):
                 self.grd.addWidget(i.parent(),pos[1],pos[0],1,1)
                 i.parent().toggleButtonShown(len(i.item.depends_on)>0)
         self.display.setUpdatesEnabled(True)
-        self.display.update()
+        # self.display.update()
         self.determine_efficiency()
         self.positions.clear()
 
