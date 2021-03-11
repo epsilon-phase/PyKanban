@@ -3,7 +3,7 @@ from src.kanban import *
 from src.kanbanitemdialog import *
 import src.settingNames as settingNames
 from PySide2.QtCore import Signal,QEvent,Qt,QSettings
-from PySide2.QtGui import QMouseEvent, QCursor, QPalette
+from PySide2.QtGui import QMouseEvent, QCursor, QPalette, QPixmap, QPaintEvent, QPainter
 from typing import Callable
 import re
 
@@ -47,13 +47,21 @@ class ClickableLabel(QLabel):
         elif event.type()==QEvent.HoverLeave:
             self.hoverLeave()
             
-
+    def paintEvent(self,event:QPaintEvent):
+        pix = self.pixmap()
+        if pix is not None:
+            p = QPainter(self)
+            p.drawPixmap(0,0,pix)
+        else:
+            print("No pixmap :(")
+        super(ClickableLabel,self).paintEvent(event)
     def mousePressEvent(self,event:QMouseEvent)->None:
         from PySide2.QtCore import Qt 
         if event.button() == Qt.LeftButton:
             self.clicked.emit()
 
         super(ClickableLabel,self).mousePressEvent(event)
+
 
 class KanbanWidget(QFrame):
     """
@@ -88,15 +96,29 @@ class KanbanWidget(QFrame):
         layout.setAlignment(Qt.AlignTop)
         self.setLayout(layout)
 
+        name_ctr = QWidget()
+        hbox =QHBoxLayout()
+        hbox.setAlignment(Qt.AlignLeft)
+        name_ctr.setLayout(hbox)
+
+        self.icon = QLabel(name_ctr)
+        name_ctr.layout().addWidget(self.icon)
+        self.icon.setPixmap(self.style().standardPixmap(QStyle.SP_DesktopIcon).scaled(32, 32, Qt.KeepAspectRatio))
+
         self.name = ClickableLabel()
         self.name.setToolTip(self.tr("Edit"))
         self.name.clicked.connect(self.openEditingDialog)
+
+
+
         fn = self.name.font()
         # fn.setPointSizeF(1.2*fn.pointSizeF())
         self.name.setFont(fn)
         # self.name.setWordWrap(True)
         self.name.setAlignment(Qt.AlignTop|Qt.AlignLeft)
-        layout.addWidget(self.name,alignment=Qt.AlignTop|Qt.AlignLeft)
+        name_ctr.layout().addWidget(self.name,alignment=Qt.AlignTop|Qt.AlignLeft)
+
+        layout.addWidget(name_ctr)
         
         self.description = QTextEdit()
         self.description.setReadOnly(True)
@@ -171,8 +193,10 @@ class KanbanWidget(QFrame):
                 if data.background is not None:
                     background = data.background
                     palette.setColor(QPalette.Window,background)
+                if data.icon is not None:
+                    self.icon.setPixmap(data.icon)
             # self.setStyleSheet(stylesheet)
-            self.setPalette(palette)
+                self.setPalette(palette)
             self.setAutoFillBackground(True)
 
         self.updateGeometry()

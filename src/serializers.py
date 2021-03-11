@@ -2,7 +2,9 @@ from src.kanban import KanbanBoard,KanbanItem
 from src.taskcategory import CategoryData
 from typing import *
 from json import JSONEncoder
-from PySide2.QtGui import QColor
+from PySide2.QtGui import QColor,QPixmap
+
+from PySide2.QtCore import QByteArray, QBuffer, QIODevice
 
 def ColorToTuple(color:QColor)->Tuple[int,int,int,int]:
     return (color.red(),color.green(),color.blue(),color.alpha())
@@ -26,6 +28,13 @@ def as_category_data(dct:dict)->CategoryData:
         result.foreground=ColorFromTuple(dct['foreground'])
     if 'background' in dct:
         result.background=ColorFromTuple(dct['background'])
+    if 'icon' in dct:
+        ba = QByteArray.fromBase64(QByteArray(dct['icon'].encode()))
+        buffer = QBuffer(ba)
+        buffer.open(QIODevice.ReadOnly)
+        pix = QPixmap()
+        pix.loadFromData(ba,'PNG')
+        result.icon = pix
     return result
 
 def as_kanban_board(dct:dict):
@@ -75,6 +84,14 @@ class KanbanBoardEncoder(JSONEncoder):
                 data['foreground']=ColorToTuple(item.foreground)
             if item.background is not None:
                 data['background'] = ColorToTuple(item.background)
+            if item.icon is not None:
+
+                ba = QByteArray()
+                buffer = QBuffer(ba)
+                buffer.open(QIODevice.WriteOnly)
+                item.icon.save(buffer,"PNG")
+                data['icon']=bytes(ba.toBase64()).decode()
+                buffer.close()
             category_data[name]=data
         result['category_data']=category_data
         result['categories'] = list(kanban.categories)

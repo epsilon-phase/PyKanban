@@ -1,5 +1,5 @@
 from PySide2.QtWidgets import *
-from PySide2.QtGui import QBrush
+from PySide2.QtGui import QBrush, QPixmap
 from PySide2.QtCore import Qt
 from src.kanban import *
 from src.taskcategory import CategoryData
@@ -36,6 +36,13 @@ class CategoryEditor(QDialog):
         self.editforeground.clicked.connect(self.editCategoryForeground)
         self.grd.addWidget(self.editforeground,1,1,1,1)
 
+        self.seticon = QPushButton(self.tr("Select Icon"))
+        self.seticon.clicked.connect(self.setIconClicked)
+        self.grd.addWidget(self.seticon,1,3,1,1)
+
+        self.clearicon = QPushButton(self.tr("Clear Icon"))
+        self.grd.addWidget(self.clearicon,2,3,1,1)
+
         self.editbackground = QPushButton(self.tr("Edit Background Color"))
         self.editbackground.clicked.connect(self.editCategoryBackground)
         self.grd.addWidget(self.editbackground,2,1,1,1)
@@ -70,6 +77,8 @@ class CategoryEditor(QDialog):
         self.clearbackground_button.setEnabled(enabled)
         self.editbackground.setEnabled(enabled)
         self.editforeground.setEnabled(enabled)
+        self.clearicon.setEnabled(enabled)
+        self.seticon.setEnabled(enabled)
 
         if enabled:
             item = self.listView.selectedItems()[0]
@@ -77,9 +86,11 @@ class CategoryEditor(QDialog):
             if data is not None:
                 self.clearforeground_button.setEnabled(data.foreground is not None)
                 self.clearbackground_button.setEnabled(data.background is not None)
+                self.clearicon.setEnabled(data.icon is not None)
             else:
                 self.clearforeground_button.setEnabled(False)
                 self.clearbackground_button.setEnabled(False)
+                self.clearicon.setEnabled(False)
 
 
     def populate(self)->None:
@@ -151,6 +162,18 @@ class CategoryEditor(QDialog):
         item.data(32).background = None
         item.setBackground(QBrush())
 
+    def setIconClicked(self)->None:
+        item = self.listView.selectedItems()[0]
+        file = QFileDialog.getOpenFileName(self,"Open Icon","", "Images (*.png *.jpg *.svg)")
+        if file[0] == "":
+            return
+        if item.data(32) is None:
+            item.setData(32,CategoryData())
+        data=item.data(32)
+        data.icon=QPixmap()
+        data.icon.load(file[0])
+        item.setData(32,data)
+
     def editCategoryBackground(self)->None:
 
         item = self.listView.selectedItems()[0]
@@ -196,7 +219,7 @@ class CategoryEditor(QDialog):
             if data is None:
                 continue
             #Clean up unassociated color data.
-            if data.foreground is None and data.background is None:
+            if data.foreground is None and data.background is None and data.icon is None:
                 del self.board.category_data[name]
             else:
                 self.board.category_data[name]=data

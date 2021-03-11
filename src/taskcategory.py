@@ -1,4 +1,4 @@
-from PySide2.QtGui import QColor
+from PySide2.QtGui import QColor, QPixmap
 from typing import Optional
 class CategoryData:
     """
@@ -10,7 +10,8 @@ class CategoryData:
     foreground:Optional[QColor]
     #: The background color the widget should render with
     background:Optional[QColor]
-    __slots__=('foreground','background')
+    icon:Optional[QPixmap]
+    __slots__=('foreground','background','icon')
     
     def __init__(self, foreground:QColor=None, background:QColor=None):
         self.foreground = foreground

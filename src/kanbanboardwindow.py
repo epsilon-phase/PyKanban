@@ -8,6 +8,7 @@ from src.kanbanitemdialog import KanbanItemDialog
 from src.categorylist import CategoryEditor
 from src.treeview import TreeView
 from typing import *
+from pickle import PicklingError
 
 class LabeledColumn(QScrollArea):
     label: QLabel
@@ -418,7 +419,7 @@ class KanbanBoardWindow(QMainWindow):
         return filename
 
     def openSave(self):
-        from settingNames import LAST_DOCUMENT_USED
+        from src.settingNames import LAST_DOCUMENT_USED
         filename = self.kanban.board.filename
         if self.kanban.board.filename is None:
             filename = self.getSaveFilename()
@@ -449,7 +450,7 @@ class KanbanBoardWindow(QMainWindow):
 
     def openSaveAs(self):
         from src.settingNames import LAST_DOCUMENT_USED
-        from pickle import PicklingError
+
         filename = self.getSaveFilename()
         if filename=='':
             return
