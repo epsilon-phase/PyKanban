@@ -1,11 +1,11 @@
 from __future__ import annotations
 from typing import *
-from enum import IntEnum,Enum,auto
+from enum import IntEnum, Enum, auto
 
 import pickle
 
 import json
-
+from PySide2.QtWidgets import QWidget
 
 class Priority(IntEnum):
     """
@@ -121,7 +121,7 @@ class KanbanItem:
         path.remove(self)
         return False
 
-    def print(self,complete:bool=False,level:int=0)->None:
+    def print(self, complete:bool=False, level:int=0)->None:
         depth = '\t'*level
         print(f"{depth}----")
         print(f"{depth}Name:{self.name}")
@@ -132,9 +132,9 @@ class KanbanItem:
             if not complete:
                 print(f"\t{depth}{i.short_name()}")
             else:
-                i.print(complete,level+1)
+                i.print(complete, level + 1)
 
-    def state(self)->ItemState:
+    def state(self) -> ItemState:
         """
         Return the completion state of the item
 
@@ -146,7 +146,7 @@ class KanbanItem:
             return ItemState.COMPLETED
         return ItemState.AVAILABLE
 
-    def add_category(self,category:str)->None:
+    def add_category(self, category:str)->None:
         """
         Add a category to the item, since this requires ensuring that
         it also exists in the board, it is best handled as a setter type
@@ -161,11 +161,11 @@ class KanbanItem:
         else:
             print(f"Not adding category to board {category}")
 
-    def remove_category(self,category:str)->None:
+    def remove_category(self, category:str)->None:
         if category in self.category:
             self.category.remove(category)
 
-    def update_category(self,category:str,state:bool)->None:
+    def update_category(self, category:str,state:bool)->None:
         """
         Convenience to add or remove a category based on a bool.
 
@@ -189,7 +189,7 @@ class KanbanItem:
     def __setstate__(self, state):
         for slot,value in state.items():
             setattr(self,slot,value)
-        self.widget=None
+        self.widget = []
         self._fill_in_missing()
 
     def _fill_in_missing(self):
@@ -206,7 +206,6 @@ class KanbanItem:
             print("Filled in missing category set")
         if isinstance(self.category,list):
             self.category=set(self.category)
-
 
     def widget_of(self,widget:QWidget)->QWidget:
         for i in self.widget:
@@ -261,16 +260,16 @@ class KanbanBoard:
             matches.append(i)
         return matches
 
-    def dependents_of(self,item:KanbanItem)->List[KanbanItem]:
+    def dependents_of(self, item:KanbanItem) -> List[KanbanItem]:
         """
         Returns the items that depend on the given item directly
         
         :param item: The item that is depended on.
         :returns: A list of items that depend on item
         """
-        return list(filter(lambda x:item in x.depends_on,self.items))
+        return list(filter(lambda x: item in x.depends_on, self.items))
 
-    def add_item(self,item:KanbanItem)->None:
+    def add_item(self, item:KanbanItem) -> None:
         """
         Add an item to the kanbanboard, setting its parent slot to the board
         
@@ -309,7 +308,7 @@ class KanbanBoard:
         
         :returns: A list of removed categories.
         """
-        seen:Set[str] = set()
+        seen: Set[str] = set()
         for item in self.items:
             seen = seen.union(item.category)
         not_used = self.categories.difference(seen)
@@ -319,7 +318,7 @@ class KanbanBoard:
             self.categories.remove(i)
         return not_used
 
-    def save(self, filename:str)->None:
+    def save(self, filename:str) -> None:
         """
         Save the kanban board to a file
         
@@ -336,11 +335,11 @@ class KanbanBoard:
             thing = pickle.dumps(self)
             f.write(thing)
 
-    def export(self,filename:str)->None:
+    def export(self, filename:str) -> None:
         if KanbanBoard.Encoder is None:
             from src.serializers import KanbanBoardEncoder
             KanbanBoard.Encoder = KanbanBoardEncoder
-        with open(filename,'w') as f:
+        with open(filename, 'w') as f:
             import json
             f.write(json.dumps(self,cls=KanbanBoard.Encoder))
 
@@ -379,6 +378,7 @@ class KanbanBoard:
 
     Encoder = None
     Decoder = None
+
     @staticmethod
     def load(filename:str)->KanbanBoard:
         """
@@ -390,7 +390,7 @@ class KanbanBoard:
             return KanbanBoard.loadJson(filename)
         else:
             with open(filename,'rb') as f:
-                c=pickle.load(f)
+                c = pickle.load(f)
                 c._fix_missing()
                 return c
 
@@ -401,7 +401,6 @@ class KanbanBoard:
             KanbanBoard.Decoder = as_kanban_board
         with open(filename,'r') as f:
             return json.load(f,object_hook=KanbanBoard.Decoder)
-
 
     def toGraphViz(self)->str:
         """

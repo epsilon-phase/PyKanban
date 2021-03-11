@@ -1,9 +1,10 @@
 from PySide2.QtWidgets import *
-from PySide2.QtGui import QPaintEvent,QPainter, QPainterPath
+from PySide2.QtGui import QPaintEvent,QPainter, QPainterPath,QColor
 from PySide2.QtCore import Signal, QTimer,Qt,QEvent
 from src.kanban import KanbanBoard, KanbanItem, ItemState
 from src.kanbanwidget import KanbanWidget
 from typing import *
+
 
 class TreeArea(QFrame):
     def __init__(self,parent=None,board=None):
@@ -11,22 +12,40 @@ class TreeArea(QFrame):
         self.board=board
         self.lastLen=0
         self.widgets={}
+        self.active = None
+        self.setAttribute(Qt.WA_Hover,True)
+
+    def event(self, event:QEvent)->bool:
+        if event.type() == QEvent.MouseButtonRelease:
+            self.active = None
+            for i in self.findChildren(KanbanWidget):
+                if i.underMouse():
+                    if self.active == i.parent():
+                        self.active = None
+                    else:
+                        self.active = i.parent()
+                    self.update()
+                    break
+
+        return super(TreeArea,self).event(event)
 
     def paintEvent(self,event:QPaintEvent):
         """
         Draw lines to denote each item's parents/children
         """
         from PySide2.QtCore import QPointF
-        from collections import defaultdict
         path = QPainterPath(QPointF(0,0))
-        painter =QPainter(self)
+        painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         offset = 5.0
         if len(self.board.items)!=self.lastLen:
+            self.board.items[0].widget_of(self)
             self.widgets = {x:x.widget_of(self) for x in self.board.items}
             self.lastLen=len(self.board.items)
+        else:
+            pass
         widgets=self.widgets
-
+        active = QPainterPath()
         for i in self.board.items:
             widget = widgets[i]
             widget = widget.parent()
@@ -44,24 +63,41 @@ class TreeArea(QFrame):
                     continue
                 x2, y2 = child.pos().x(), child.pos().y()
                 x2 = x2 + child.size().width() // 2
-                path.moveTo(x1,y1)
-                path.lineTo(x1, y1 + offset + offmod)
-                path.lineTo(x2, y1 + offset + offmod)
-                path.lineTo(x2, y2 - offset + offmod)
-                path.lineTo(x2, y2)
-                path.addEllipse(x2-2.5,y2-2.5,5,5)
+                #if widget.underMouse() or child.underMouse() \
+
+                if widget == self.active or child == self.active or widget.underMouse() or child.underMouse():
+                    active.moveTo(x1, y1)
+                    active.lineTo(x1, y1 + offset + offmod)
+                    active.lineTo(x2, y1 + offset + offmod)
+                    active.lineTo(x2, y2 - offset + offmod)
+                    active.lineTo(x2, y2)
+                    active.addEllipse(x2-2.5,y2-2.5,5,5)
+                else:
+                    path.moveTo(x1,y1)
+                    path.lineTo(x1, y1 + offset + offmod)
+                    path.lineTo(x2, y1 + offset + offmod)
+                    path.lineTo(x2, y2 - offset + offmod)
+                    path.lineTo(x2, y2)
+                    path.addEllipse(x2-2.5,y2-2.5,5,5)
                 offmod += 2
                 offmod %= 30
         p = painter.pen()
         p.setWidthF(1.5)
         painter.setPen(p)
         painter.drawPath(path)
+        p.setColor(Qt.darkYellow)
+        painter.setPen(p)
+        painter.drawPath(active)
+        print(active.length())
         super(TreeArea,self).paintEvent(event)
 
+
 class Collapser(QWidget):
+    #: Emitted whenever the user clicks on the collapse button
     collapseToggle = Signal(QFrame)
-    def __init__(self,parent=None):
-        super(Collapser,self).__init__(parent)
+
+    def __init__(self, parent=None):
+        super(Collapser, self).__init__(parent)
 
         self.collapseButton = QPushButton(self.tr("Collapse"))
         self.collapseButton.clicked.connect(self.toggle)
@@ -92,17 +128,18 @@ class Collapser(QWidget):
         self.collapseButton.setVisible(show)
 
 
-
-
 class TreeView(QWidget):
     board:KanbanBoard
+    #: Association between each kanbanitem and the position assigned by the
+    #: layout item
     positions:Dict[KanbanItem,Tuple[int,int]]
+    #: The set of all kanbanitems whose children should not be considered in laying out the tree
     collapsed:Set[KanbanItem]
+    #: The set of all kanbanitems considered completed for the sake of hiding
+    completed:Set[KanbanItem]
     itemChoice:QComboBox
     hiding_completed:QCheckBox
     extraCompactCheckbox:QCheckBox
-
-
 
     def __init__(self,parent:QWidget=None,board:KanbanBoard=None):
         super(TreeView,self).__init__(parent)
@@ -145,7 +182,10 @@ class TreeView(QWidget):
         self.scrl = scrl
         root.layout().addWidget(scrl)
 
-        
+        self.searchIndexSelected = 0
+        self.last_filter = None
+        self.matching = []
+
         self.setLayout(root.layout())
 
         self.positions = {}
@@ -163,7 +203,7 @@ class TreeView(QWidget):
         """
         return self.extraCompactCheckbox.isChecked()
 
-    def addKanbanItem(self,k:KanbanItem)->None:
+    def addKanbanItem(self, k:KanbanItem) -> None:
         container = Collapser(self)
         widget = KanbanWidget(container,k)
         container.layout().addWidget(widget)
@@ -175,7 +215,6 @@ class TreeView(QWidget):
         self.itemChoice.setItemData(self.itemChoice.count()-1,k,32)
         if self.finishedAdding:
             self.relayout(self.itemChoice.currentIndex())
-
 
     def collapse(self,collapser:Collapser):
         """
@@ -197,7 +236,6 @@ class TreeView(QWidget):
         #Due to the way that widget size/position are calculated, this
         #is, unfortunately, necessary.
         QTimer.singleShot(1,partial(self.scrl.ensureWidgetVisible,collapser))
-
 
     def determine_efficiency(self):
         max_x=0
@@ -275,7 +313,7 @@ class TreeView(QWidget):
         ret:Tuple[int,bool] = 0,False
         completed = False
         if k.state() == ItemState.COMPLETED:
-            completed=True
+            completed = True
         if k in self.positions:
             print(f"double visited: {self.name}")
             ret = (x+1,completed)
@@ -355,12 +393,21 @@ class TreeView(QWidget):
 
 
 
-    def widgetChange(self,widget:KanbanWidget, fromState:ItemState,toState:ItemState):
+    def widgetChange(self,widget:KanbanWidget, fromState:ItemState, toState:ItemState):
+        # Don't updating the layout unless the widget is visible
+        if widget.item not in self.positions:
+            return
         self.relayout(self.itemChoice.currentIndex())
 
     def filterChanged(self,text:str):
-        for i in self.findChildren(KanbanWidget):
-            i.setVisible(i.item.position is not None and i.item.matches(text))
+        if self.last_filter is None or self.last_filter != text:
+            self.matching = list(filter(lambda x:x.matches(text), self.board.items))
+            self.last_filter = text
+            self.searchIndexSelected = -1
+        self.searchIndexSelected += 1
+        self.searchIndexSelected %= len(self.matching)
+        self.scrl.ensureWidgetVisible(self.matching[self.searchIndexSelected].widget_of(self.display))
+
 
     def updateCategories(self):
         for i in filter(lambda x:len(x.item.category)>0,self.findChildren(KanbanWidget)):

@@ -272,6 +272,7 @@ class KanbanBoardWidget(QFrame):
         self.searchText= QLineEdit()
         utilityLayout.addWidget(self.searchText)
         self.searchText.textChanged.connect(self.filterChanged)
+        self.searchText.returnPressed.connect(self.filterChanged)
 
         self.board = k
         self.kanbanWidgets = []
@@ -402,23 +403,22 @@ class KanbanBoardWindow(QMainWindow):
                 self.kanban.searchText.setText("")
             self.kanban.searchText.selectAll()
         self.kanban.searchText.setFocus(Qt.ShortcutFocusReason)
-        a
 
     def getSaveFilename(self)->str:
-        thing = QFileDialog.getSaveFileName(filter="Kanban Boards (*.kb);;Kanban Boards (*.kb.json)")
+        thing = QFileDialog.getSaveFileName(filter="Kanban Boards (*.kb.json);;Kanban Boards (*.kb)")
         print(thing)
         filename: str = thing[0]
         if filename == '':
             return filename
 
-        if thing[1]=='Kanban Boards (*.kb)' and not filename.endswith('.kb'):
+        if thing[1] == 'Kanban Boards (*.kb)' and not filename.endswith('.kb'):
             filename += ".kb"
         elif not filename.endswith('.kb.json'):
             filename += ".kb.json"
         return filename
 
     def openSave(self):
-        from src.settingNames import LAST_DOCUMENT_USED
+        from settingNames import LAST_DOCUMENT_USED
         filename = self.kanban.board.filename
         if self.kanban.board.filename is None:
             filename = self.getSaveFilename()

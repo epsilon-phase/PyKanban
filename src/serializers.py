@@ -46,9 +46,10 @@ def as_kanban_board(dct:dict):
     else:
         return dct
 
+
 class KanbanBoardEncoder(JSONEncoder):
     def encodeItem(self,item:KanbanItem,ids:Dict[KanbanItem,int])->Dict[str,Any]:
-        result:dict[str,Any] = {}
+        result:Dict[str,Any] = {}
         result['id']=ids[item]
         result['category']=list(item.category)
         result['name']=item.name
@@ -59,12 +60,12 @@ class KanbanBoardEncoder(JSONEncoder):
         result['completed']=item.completed
         return result
 
-    def encodeKanban(self,kanban:KanbanBoard):
+    def encodeKanban(self, kanban:KanbanBoard) -> Dict:
         ids = {}
-        #Assign IDs for each item
+        # Assign IDs for each item
         for i,v in enumerate(kanban.items):
             ids[v]=i
-        result:dict[str,Any] = {}
+        result:Dict[str,Any] = {}
         result['__kanbanboard__']=True
         result['items'] = list(map(lambda x:self.encodeItem(x,ids),kanban.items))
         category_data={}
@@ -84,4 +85,4 @@ class KanbanBoardEncoder(JSONEncoder):
     def default(self,obj):
         if isinstance(obj,KanbanBoard):
             return self.encodeKanban(obj)
-        return JsonEncoder.default(self,obj)
+        return JSONEncoder.default(self, obj)

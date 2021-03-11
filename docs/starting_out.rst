@@ -21,7 +21,7 @@ So, the basic workflow here is:
 
 	Set dependencies, set categories
 3. Work through them, going back to 2 whenever it feels appropriate 
-  (such as when you underestimated the amount of work required to do something as a monolithic task)
+    (such as when you underestimated the amount of work required to do something as a monolithic task)
 
 Item creation and editing Dialog
 --------------------------------
