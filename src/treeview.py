@@ -24,7 +24,7 @@ class TreeArea(QFrame):
                         self.active = None
                     else:
                         self.active = i.parent()
-                    self.update()
+                    self.repaint()
                     break
 
         return super(TreeArea,self).event(event)
@@ -34,6 +34,7 @@ class TreeArea(QFrame):
         Draw lines to denote each item's parents/children
         """
         from PySide2.QtCore import QPointF
+        print("painting treeview")
         path = QPainterPath(QPointF(0,0))
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -64,7 +65,6 @@ class TreeArea(QFrame):
                 x2, y2 = child.pos().x(), child.pos().y()
                 x2 = x2 + child.size().width() // 2
                 #if widget.underMouse() or child.underMouse() \
-
                 if widget == self.active or child == self.active or widget.underMouse() or child.underMouse():
                     active.moveTo(x1, y1)
                     active.lineTo(x1, y1 + offset + offmod)
@@ -92,7 +92,7 @@ class TreeArea(QFrame):
         super(TreeArea,self).paintEvent(event)
 
 
-class Collapser(QWidget):
+class Collapser(QFrame):
     #: Emitted whenever the user clicks on the collapse button
     collapseToggle = Signal(QFrame)
 
@@ -174,6 +174,7 @@ class TreeView(QWidget):
         display.setLayout(self.grd)
         
         self.display=display
+        print(display)
 
         display.setSizePolicy(QSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding))
         scrl = QScrollArea()
@@ -386,7 +387,7 @@ class TreeView(QWidget):
                 self.grd.addWidget(i.parent(),pos[1],pos[0],1,1)
                 i.parent().toggleButtonShown(len(i.item.depends_on)>0)
         self.display.setUpdatesEnabled(True)
-        # self.display.update()
+        self.display.update()
         self.determine_efficiency()
         self.positions.clear()
 
@@ -400,8 +401,19 @@ class TreeView(QWidget):
         self.relayout(self.itemChoice.currentIndex())
 
     def filterChanged(self,text:str):
+        from PySide2.QtGui import QPalette
         if self.last_filter is None or self.last_filter != text:
-            self.matching = list(filter(lambda x:x.matches(text), self.board.items))
+            self.matching.clear()
+            for i in self.board.items:
+                if i.matches(text):
+                    self.matching.append(i)
+            for i in self.findChildren(KanbanWidget):
+                p = i.parent()
+                if i.item in self.matching and text != '':
+                    p.setFrameStyle(QFrame.Panel|QFrame.Raised)
+                    p.setLineWidth(2)
+                else:
+                    p.setFrameStyle(QFrame.NoFrame)
             self.last_filter = text
             self.searchIndexSelected = -1
         self.searchIndexSelected += 1

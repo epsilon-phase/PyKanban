@@ -1,7 +1,7 @@
 from __future__ import annotations
 from PySide2.QtWidgets import *
 from PySide2.QtCore import Qt, QSettings, QTimer
-from PySide2.QtGui import QKeySequence,QCloseEvent
+from PySide2.QtGui import QKeySequence, QCloseEvent
 from src.kanban import *
 from src.kanbanwidget import KanbanWidget
 from src.kanbanitemdialog import KanbanItemDialog
@@ -10,13 +10,14 @@ from src.treeview import TreeView
 from typing import *
 from pickle import PicklingError
 
+
 class LabeledColumn(QScrollArea):
     label: QLabel
     vlayout: QVBoxLayout
 
-    def __init__(self, text: str,parent:Optional[QWidget]=None):
+    def __init__(self, text: str, parent: Optional[QWidget] = None):
         super(LabeledColumn, self).__init__(parent)
-        self.setObjectName("LabeledColumn: "+text)
+        self.setObjectName("LabeledColumn: " + text)
         self.vlayout = QVBoxLayout()
         self.vlayout.setAlignment(Qt.AlignTop)
         label = QLabel(text)
@@ -26,7 +27,7 @@ class LabeledColumn(QScrollArea):
         self.toggleButton = QPushButton(self.tr("Collapse"))
         self.toggleButton.clicked.connect(self.toggleWidgetDisplay)
         self.vlayout.addWidget(self.toggleButton)
-        
+
         frame = QFrame()
         frame.setLayout(self.vlayout)
 
@@ -40,26 +41,26 @@ class LabeledColumn(QScrollArea):
 
         self.setWidget(frame)
 
-    def toggleWidgetDisplay(self)->None:
-        self.toggleButton.setText(self.tr("Expand") 
+    def toggleWidgetDisplay(self) -> None:
+        self.toggleButton.setText(self.tr("Expand")
                                   if self.widgetPanel.isVisible() else self.tr("Collapse")
                                   )
         self.widgetPanel.setVisible(not self.widgetPanel.isVisible())
 
-    def sort_widgets(self)->None:
+    def sort_widgets(self) -> None:
         """
         Sort the kanbanwidgets by priority.
         """
-        #At some point it would be a *very* good idea to rewrite this
-        #so that it isn't O(n+nlog(n) complexity)
+        # At some point it would be a *very* good idea to rewrite this
+        # so that it isn't O(n+nlog(n) complexity)
         widg = self.findChildren(KanbanWidget)
         for i in widg:
             self.vlayout.removeWidget(i)
-        widg.sort(key=lambda x:x.item.priority)
+        widg.sort(key=lambda x: x.item.priority)
         for i in widg:
             self.widgetArea.addWidget(i)
 
-    def addWidget(self, widget: QWidget)->None:
+    def addWidget(self, widget: QWidget) -> None:
         """
         Add a widget to the area under the label in the column.
 
@@ -68,20 +69,21 @@ class LabeledColumn(QScrollArea):
         self.widgetArea.addWidget(widget)
         self.sort_widgets()
 
+
 class AbstractView():
-    def addKanbanItem(self,k:KanbanItem)->None:
+    def addKanbanItem(self, k: KanbanItem) -> None:
         pass
 
-    def filterChanged(self,text:str)->None:
+    def filterChanged(self, text: str) -> None:
         pass
 
-    def updateCategories(self)->None:
+    def updateCategories(self) -> None:
         pass
 
-    def tabName(self)->str:
+    def tabName(self) -> str:
         pass
 
-    def newBoard(self,board:KanbanBoard)->None:
+    def newBoard(self, board: KanbanBoard) -> None:
         """
         Set the current board to a new one, deleting all widgets and such
         """
@@ -94,10 +96,11 @@ class StatusView(QFrame):
     to be done, blocked, or completed.
     """
     kanbanWidgets: List[KanbanWidget]
-    def __init__(self, parent=None, board:KanbanBoard=None):
-        super(StatusView,self).__init__(None)
-        self.kanbanWidgets=[]
-        self.board=board
+
+    def __init__(self, parent=None, board: KanbanBoard = None):
+        super(StatusView, self).__init__(None)
+        self.kanbanWidgets = []
+        self.board = board
         self.mainlayout = QHBoxLayout()
         self.setLayout(self.mainlayout)
         self.availableColumn = LabeledColumn(self.tr("Available"))
@@ -107,7 +110,7 @@ class StatusView(QFrame):
         self.mainlayout.addWidget(self.completedColumn)
         self.mainlayout.addWidget(self.blockedColumn)
 
-    def selectColumn(self, state: ItemState)->LabeledColumn:
+    def selectColumn(self, state: ItemState) -> LabeledColumn:
         """
         Obtain the appropriate column for a widget to end up in given its item state
         
@@ -120,7 +123,7 @@ class StatusView(QFrame):
             selection = self.blockedColumn
         return selection
 
-    def addKanbanItem(self, k: KanbanItem)->None:
+    def addKanbanItem(self, k: KanbanItem) -> None:
         state = k.state()
         widg = KanbanWidget(None, k)
         self.kanbanWidgets.append(widg)
@@ -132,13 +135,13 @@ class StatusView(QFrame):
         if parent is not None:
             parent.setWindowModified(True)
 
-    def removeFrom(self, widget: QWidget, state: ItemState)->None:
+    def removeFrom(self, widget: QWidget, state: ItemState) -> None:
         self.layout().removeWidget(widget)
 
-    def addTo(self, widget: QWidget, state: ItemState)->None:
+    def addTo(self, widget: QWidget, state: ItemState) -> None:
         self.selectColumn(state).addWidget(widget)
 
-    def widgetChange(self, widget: QWidget, fromState: ItemState, toState: ItemState)->None:
+    def widgetChange(self, widget: QWidget, fromState: ItemState, toState: ItemState) -> None:
         """
         Handle the aftermath of a kanbanwidget's update, move it to the 
         correct column, place it in the correct spot in the column, etc
@@ -150,8 +153,8 @@ class StatusView(QFrame):
         print(f"{widget.item.name}: {fromState}->{toState}")
 
         if fromState == toState:
-            #Although the item may not have changed column,
-            #the column may still need reordering
+            # Although the item may not have changed column,
+            # the column may still need reordering
             self.selectColumn(fromState).sort_widgets()
             return
         self.removeFrom(widget, fromState)
@@ -164,18 +167,18 @@ class StatusView(QFrame):
                 if widget.item in i.item.depends_on:
                     self.widgetChange(i, ItemState.BLOCKED, i.item.state())
 
-    def populate(self)->None:
+    def populate(self) -> None:
         if self.board is None:
             return
         for i in self.board.items:
             self.addKanbanItem(i)
 
-    def updateCategories(self)->None:
+    def updateCategories(self) -> None:
         for i in self.kanbanWidgets:
-            if len(i.item.category)>0:
+            if len(i.item.category) > 0:
                 i.updateDisplay()
 
-    def newBoard(self, board: KanbanBoard)->None:
+    def newBoard(self, board: KanbanBoard) -> None:
         """
         Initialize widget listing with items
         """
@@ -186,59 +189,57 @@ class StatusView(QFrame):
         self.board = board
         self.populate()
 
-    def tabName(self)->str:
+    def tabName(self) -> str:
         return self.tr("Status")
 
-    def filterChanged(self,text:str)->None:
+    def filterChanged(self, text: str) -> None:
         for i in self.findChildren(KanbanWidget):
             i.setVisible(i.item.matches(text))
 
 
-
 class QueueView(LabeledColumn):
-    kanbanWidgets:List[KanbanWidget]
-    def __init__(self, parent:QWidget=None,board:KanbanBoard=None):
-        super(QueueView,self).__init__("",parent)
+    kanbanWidgets: List[KanbanWidget]
+
+    def __init__(self, parent: QWidget = None, board: KanbanBoard = None):
+        super(QueueView, self).__init__("", parent)
         self.kanbanWidgets = []
         self.board = board
 
-    def tabName(self)->str:
+    def tabName(self) -> str:
         return self.tr("Queue")
 
-    def newBoard(self, board)->None:
+    def newBoard(self, board) -> None:
         for i in self.widgetArea.children():
             i.deleteLater()
             self.widgetArea.removeWidget(i)
         self.populate()
 
-    def widgetChange(self, widget: KanbanWidget, fromState: ItemState, toState: ItemState)->None:
+    def widgetChange(self, widget: KanbanWidget, fromState: ItemState, toState: ItemState) -> None:
         widget.setVisible(not (widget.item.completed or widget.item.blocked()))
 
-    def populate(self)->None:
+    def populate(self) -> None:
         if self.board is None:
             return
         for i in self.board.items:
-            widget = KanbanWidget(self,i)
+            widget = KanbanWidget(self, i)
             widget.setVisible(not (widget.item.completed or widget.item.blocked()))
             self.addWidget(widget)
 
-    def filterChanged(self,text:str):
+    def filterChanged(self, text: str):
         for i in self.findChildren(KanbanWidget):
             if i.item.completed or i.item.blocked():
                 continue
             i.setVisible(i.item.matches(text))
 
-    def addKanbanItem(self,k:KanbanItem)->None:
-        widg=KanbanWidget(kbi=k)
+    def addKanbanItem(self, k: KanbanItem) -> None:
+        widg = KanbanWidget(kbi=k)
         widg.setVisible(not (widg.item.completed or widg.item.blocked()))
         self.addWidget(widg)
-        
-    def updateCategories(self)->None:
+
+    def updateCategories(self) -> None:
         for i in self.findChildren(KanbanWidget):
-            if len(i.item.category)>0:
+            if len(i.item.category) > 0:
                 i.updateDisplay()
-
-
 
 
 class KanbanBoardWidget(QFrame):
@@ -248,20 +249,20 @@ class KanbanBoardWidget(QFrame):
     kanbanWidgets: List[KanbanWidget]
     #: A list of views that are populated from the 
     #: board and updated accordingly
-    views:List[Union[TreeView,QueueView,StatusView]]
+    views: List[Union[TreeView, QueueView, StatusView]]
 
     def __init__(self, k: KanbanBoard):
         super(KanbanBoardWidget, self).__init__()
 
         self.views = []
-        self.views.append(StatusView(self,k))
-        self.views.append(QueueView(self,k))
-        self.views.append(TreeView(self,k))
+        self.views.append(StatusView(self, k))
+        self.views.append(QueueView(self, k))
+        self.views.append(TreeView(self, k))
 
         utilityPanel = QFrame()
         utilityLayout = QVBoxLayout()
         utilityPanel.setLayout(utilityLayout)
-        
+
         self.addItem = QPushButton(self.tr("Add new Item"))
         self.addItem.clicked.connect(self.openNewItem)
         utilityLayout.addWidget(self.addItem)
@@ -270,7 +271,7 @@ class KanbanBoardWidget(QFrame):
         self.categoryButton.clicked.connect(self.openCategoryEditor)
         utilityLayout.addWidget(self.categoryButton)
 
-        self.searchText= QLineEdit()
+        self.searchText = QLineEdit()
         utilityLayout.addWidget(self.searchText)
         self.searchText.textChanged.connect(self.filterChanged)
         self.searchText.returnPressed.connect(self.filterChanged)
@@ -279,25 +280,24 @@ class KanbanBoardWidget(QFrame):
         self.kanbanWidgets = []
         self.tab_container = QTabWidget()
         for i in self.views:
-            self.tab_container.addTab(i,i.tabName())
-        
+            self.tab_container.addTab(i, i.tabName())
+
         splitter = QSplitter()
         splitter.addWidget(utilityPanel)
         splitter.addWidget(self.tab_container)
-
 
         self.setLayout(QHBoxLayout())
         self.layout().addWidget(splitter)
         self.populate()
 
-        widget_counts:Dict[int,int] = {}
+        widget_counts: Dict[int, int] = {}
         for i in self.board.items:
             c = len(i.widget)
             if c not in widget_counts.keys():
-                widget_counts[c]=0
-            widget_counts[c]+=1
+                widget_counts[c] = 0
+            widget_counts[c] += 1
 
-    def addKanbanItem(self, k: KanbanItem)->None:
+    def addKanbanItem(self, k: KanbanItem) -> None:
         """
         Dispatch the addition of new kanbanitems
         to views.
@@ -308,11 +308,9 @@ class KanbanBoardWidget(QFrame):
         for i in self.views:
             i.addKanbanItem(k)
 
-
-    def populate(self)->None:
+    def populate(self) -> None:
         for v in self.views:
             v.populate()
-
 
     def filterChanged(self):
         """
@@ -323,24 +321,23 @@ class KanbanBoardWidget(QFrame):
         for i in self.views:
             i.filterChanged(query)
 
-    def openNewItem(self, k: KanbanItem)->None:
+    def openNewItem(self, k: KanbanItem) -> None:
         dialog = KanbanItemDialog(self, None, kbb=self.board)
         dialog.NewItem.connect(self.addKanbanItem)
         dialog.show()
 
-    def openCategoryEditor(self)->None:
-        c = CategoryEditor(self.board,self)
+    def openCategoryEditor(self) -> None:
+        c = CategoryEditor(self.board, self)
         c.show()
         c.finished.connect(self.updateCategories)
 
-    def updateCategories(self)->None:
+    def updateCategories(self) -> None:
         for i in self.views:
             i.updateCategories()
 
-    def newBoard(self, board: KanbanBoard)->None:
+    def newBoard(self, board: KanbanBoard) -> None:
         for i in self.views:
             i.newBoard(board)
-
 
 
 class KanbanBoardWindow(QMainWindow):
@@ -348,7 +345,7 @@ class KanbanBoardWindow(QMainWindow):
 
     def __init__(self, kb: KanbanBoard = None):
         super(KanbanBoardWindow, self).__init__()
-        
+
         self.kanban = KanbanBoardWidget(kb)
         self.kanban.setParent(self)
         self.setCentralWidget(self.kanban)
@@ -358,7 +355,7 @@ class KanbanBoardWindow(QMainWindow):
 
         new = filemenu.addAction(self.tr("New"))
         new.triggered.connect(self.newBoard)
-        
+
         save = filemenu.addAction(self.tr("Save"))
         save.triggered.connect(self.openSave)
         save.setShortcut(QKeySequence("Ctrl+S"))
@@ -376,11 +373,11 @@ class KanbanBoardWindow(QMainWindow):
         addItem.triggered.connect(self.kanban.openNewItem)
         addItem.setShortcut(QKeySequence("Ctrl+a"))
 
-        search_shortcut = QShortcut(QKeySequence("Ctrl+F"),self)
+        search_shortcut = QShortcut(QKeySequence("Ctrl+F"), self)
         search_shortcut.activated.connect(self.selectSearchBar)
 
         self.autosave_timer = QTimer(self)
-        self.autosave_timer.setInterval(1000*int(QSettings().value("Recovery/Interval")))
+        self.autosave_timer.setInterval(1000 * int(QSettings().value("Recovery/Interval")))
         self.autosave_timer.timeout.connect(self.autosave)
         self.autosave_timer.start()
         # self.setWindowModified(True)
@@ -392,21 +389,21 @@ class KanbanBoardWindow(QMainWindow):
         """
         title = self.tr("Pykanban")
         if self.kanban.board.filename is not None:
-            title+=f": {self.kanban.board.filename}"
+            title += f": {self.kanban.board.filename}"
         else:
-            title+=": Unsaved Document"
+            title += ": Unsaved Document"
         title += '[*]'
         self.setWindowTitle(title)
 
     def selectSearchBar(self):
         if self.kanban.searchText.hasFocus():
-            if self.kanban.searchText.selectionLength()>0:
+            if self.kanban.searchText.selectionLength() > 0:
                 self.kanban.searchText.setText("")
             self.kanban.searchText.selectAll()
         self.kanban.searchText.setFocus(Qt.ShortcutFocusReason)
 
-    def getSaveFilename(self)->str:
-        thing = QFileDialog.getSaveFileName(filter="Kanban Boards (*.kb.json);;Kanban Boards (*.kb)")
+    def getSaveFilename(self) -> str:
+        thing = QFileDialog.getSaveFileName(filter="Kanban Boards (JSON) (*.kb.json);;Kanban Boards (*.kb)")
         print(thing)
         filename: str = thing[0]
         if filename == '':
@@ -425,8 +422,8 @@ class KanbanBoardWindow(QMainWindow):
             filename = self.getSaveFilename()
             if filename == '':
                 return
-        settings=QSettings()
-        settings.setValue(LAST_DOCUMENT_USED,filename)
+        settings = QSettings()
+        settings.setValue(LAST_DOCUMENT_USED, filename)
         try:
             self.kanban.board.save(filename)
         except PicklingError:
@@ -452,19 +449,19 @@ class KanbanBoardWindow(QMainWindow):
         from src.settingNames import LAST_DOCUMENT_USED
 
         filename = self.getSaveFilename()
-        if filename=='':
+        if filename == '':
             return
-        settings=QSettings()
+        settings = QSettings()
         try:
             self.kanban.board.save(filename)
-            settings.setValue(LAST_DOCUMENT_USED,filename)
+            settings.setValue(LAST_DOCUMENT_USED, filename)
         except PicklingError:
             QErrorMessage.showMessage("Failed to save, sorry :(")
         self.updateTitle()
 
     def openLoad(self):
         from pickle import UnpicklingError
-        thing = QFileDialog.getOpenFileName(filter="Kanban Boards(*.kb)")
+        thing = QFileDialog.getOpenFileName(filter="Kanban Boards JSON (*.kb.json);;Kanban Boards(*.kb)")
         if thing[0] == '':
             return
         try:
@@ -478,11 +475,11 @@ class KanbanBoardWindow(QMainWindow):
         kb = KanbanBoard()
         self.kanban.newBoard(kb)
 
-    def closeEvent(self, event:QCloseEvent)->None:
+    def closeEvent(self, event: QCloseEvent) -> None:
         if self.isWindowModified():
             print("Modified!")
             wants_save = QMessageBox.question(self, "Save", self.tr("Do you want to save?"),
-                QMessageBox.Yes | QMessageBox.No)
+                                              QMessageBox.Yes | QMessageBox.No)
             if wants_save == QMessageBox.Yes:
                 self.openSave()
         event.accept()

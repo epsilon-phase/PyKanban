@@ -3,7 +3,6 @@ from typing import *
 from enum import IntEnum, Enum, auto
 
 import pickle
-
 import json
 from PySide2.QtWidgets import QWidget
 
@@ -339,9 +338,9 @@ class KanbanBoard:
         if KanbanBoard.Encoder is None:
             from src.serializers import KanbanBoardEncoder
             KanbanBoard.Encoder = KanbanBoardEncoder
+        js = json.dumps(self,cls=KanbanBoard.Encoder)
         with open(filename, 'w') as f:
-            import json
-            f.write(json.dumps(self,cls=KanbanBoard.Encoder))
+            f.write(js)
 
     def _fix_missing(self)->None:
         """
