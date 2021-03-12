@@ -109,6 +109,9 @@ class StatusView(QFrame):
         self.mainlayout.addWidget(self.availableColumn)
         self.mainlayout.addWidget(self.completedColumn)
         self.mainlayout.addWidget(self.blockedColumn)
+        self.matching = []
+        self.last_filter = None
+        self.search_index = 0
 
     def selectColumn(self, state: ItemState) -> LabeledColumn:
         """
@@ -192,9 +195,39 @@ class StatusView(QFrame):
     def tabName(self) -> str:
         return self.tr("Status")
 
-    def filterChanged(self, text: str) -> None:
-        for i in self.findChildren(KanbanWidget):
-            i.setVisible(i.item.matches(text))
+    def currentSearchResult(self)->Optional[KanbanWidget]:
+        if not self.matching:
+            return None
+        return self.matching[self.search_index]
+
+    def scroll_to_result(self, item:KanbanWidget):
+        self.selectColumn(item.item.state()).ensureWidgetVisible(item)
+
+    def advance_search(self):
+        if not self.matching:
+            return
+        self.search_index += 1
+        self.search_index %= len(self.matching)
+        self.scroll_to_result(self.currentSearchResult())
+
+    def rewind_search(self):
+        if not self.matching:
+            return
+        self.search_index -= 1
+        self.search_index %= len(self.matching)
+        self.scroll_to_result(self.currentSearchResult())
+
+    def filterChanged(self, text: str):
+        if text != self.last_filter:
+            self.matching.clear()
+            for i in self.findChildren(KanbanWidget):
+                if i.item.matches(text):
+                    self.matching.append(i)
+            self.search_index = -1
+            self.last_filter = text
+        if not self.matching:
+            return
+        self.advance_search()
 
 
 class QueueView(LabeledColumn):
@@ -204,6 +237,9 @@ class QueueView(LabeledColumn):
         super(QueueView, self).__init__("", parent)
         self.kanbanWidgets = []
         self.board = board
+        self.matching = []
+        self.last_filter = None
+        self.search_index=0
 
     def tabName(self) -> str:
         return self.tr("Queue")
@@ -225,11 +261,39 @@ class QueueView(LabeledColumn):
             widget.setVisible(not (widget.item.completed or widget.item.blocked()))
             self.addWidget(widget)
 
+    def currentSearchResult(self)->Optional[KanbanWidget]:
+        if not self.matching:
+            return None
+        return self.matching[self.search_index]
+
+    def scroll_to_result(self, item:KanbanWidget):
+        self.ensureWidgetVisible(item)
+
+    def advance_search(self):
+        if not self.matching:
+            return
+        self.search_index += 1
+        self.search_index %= len(self.matching)
+        self.scroll_to_result(self.currentSearchResult())
+
+    def rewind_search(self):
+        if not self.matching:
+            return
+        self.search_index -= 1
+        self.search_index %= len(self.matching)
+        self.scroll_to_result(self.currentSearchResult())
+
     def filterChanged(self, text: str):
-        for i in self.findChildren(KanbanWidget):
-            if i.item.completed or i.item.blocked():
-                continue
-            i.setVisible(i.item.matches(text))
+        if text != self.last_filter:
+            self.matching.clear()
+            for i in self.findChildren(KanbanWidget):
+                if i.item.matches(text) and i.isVisible() and not i.item.completed:
+                    self.matching.append(i)
+            self.search_index = -1
+            self.last_filter=text
+        if not self.matching:
+            return
+        self.advance_search()
 
     def addKanbanItem(self, k: KanbanItem) -> None:
         widg = KanbanWidget(kbi=k)
@@ -271,10 +335,24 @@ class KanbanBoardWidget(QFrame):
         self.categoryButton.clicked.connect(self.openCategoryEditor)
         utilityLayout.addWidget(self.categoryButton)
 
+        labelledLayout = QFormLayout()
+
         self.searchText = QLineEdit()
-        utilityLayout.addWidget(self.searchText)
         self.searchText.textChanged.connect(self.filterChanged)
         self.searchText.returnPressed.connect(self.filterChanged)
+        labelledLayout.addRow(self.tr("Search"), self.searchText)
+
+        searchNext = QPushButton(self.tr("Next"))
+        searchNext.clicked.connect(lambda: [i.advance_search() for i in self.views])
+        searchPrevious = QPushButton(self.tr("Previous"))
+        searchPrevious.clicked.connect(lambda: [i.rewind_search() for i in self.views])
+        hlayout = QHBoxLayout()
+        hlayout.addWidget(searchNext)
+        hlayout.addWidget(searchPrevious)
+        buttonPanel = QFrame()
+        buttonPanel.setLayout(hlayout)
+        labelledLayout.addWidget(buttonPanel)
+        utilityLayout.addLayout(labelledLayout)
 
         self.board = k
         self.kanbanWidgets = []

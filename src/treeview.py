@@ -400,6 +400,26 @@ class TreeView(QWidget):
             return
         self.relayout(self.itemChoice.currentIndex())
 
+    def currentSearchResult(self):
+        return self.matching[self.searchIndexSelected].widget_of(self.display)
+
+    def scroll_to_result(self, item:KanbanWidget):
+        self.scrl.ensureWidgetVisible(item)
+
+    def advance_search(self):
+        if not self.matching:
+            return
+        self.searchIndexSelected += 1
+        self.searchIndexSelected %= len(self.matching)
+        self.scroll_to_result(self.currentSearchResult())
+
+    def rewind_search(self):
+        if not self.matching:
+            return
+        self.searchIndexSelected -= 1
+        self.searchIndexSelected %= len(self.matching)
+        self.scroll_to_result(self.currentSearchResult())
+
     def filterChanged(self,text:str):
         from PySide2.QtGui import QPalette
         if self.last_filter is None or self.last_filter != text:
@@ -418,7 +438,7 @@ class TreeView(QWidget):
             self.searchIndexSelected = -1
         self.searchIndexSelected += 1
         self.searchIndexSelected %= len(self.matching)
-        self.scrl.ensureWidgetVisible(self.matching[self.searchIndexSelected].widget_of(self.display))
+        self.scrl.ensureWidgetVisible(self.currentSearchResult())
 
 
     def updateCategories(self):
