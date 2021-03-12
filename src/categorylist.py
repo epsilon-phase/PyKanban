@@ -41,6 +41,7 @@ class CategoryEditor(QDialog):
         self.grd.addWidget(self.seticon,1,3,1,1)
 
         self.clearicon = QPushButton(self.tr("Clear Icon"))
+        self.clearicon.clicked.connect(self.clearIconClicked)
         self.grd.addWidget(self.clearicon,2,3,1,1)
 
         self.editbackground = QPushButton(self.tr("Edit Background Color"))
@@ -173,6 +174,11 @@ class CategoryEditor(QDialog):
         data.icon=QPixmap()
         data.icon.load(file[0])
         item.setData(32,data)
+
+    def clearIconClicked(self):
+        item = self.listView.selectedItems()[0]
+        data = item.data(32)
+        data.icon=None
 
     def editCategoryBackground(self)->None:
 
