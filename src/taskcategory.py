@@ -13,9 +13,10 @@ class CategoryData:
     icon:Optional[QPixmap]
     __slots__=('foreground','background','icon')
     
-    def __init__(self, foreground:QColor=None, background:QColor=None):
+    def __init__(self, foreground:QColor=None, background:QColor=None, icon:QPixmap=None):
         self.foreground = foreground
         self.background = background
+        self.icon=icon
 
     def __setstate__(self,state):
         for slot, value in state.items():

@@ -30,7 +30,6 @@ class ClickableLabel(QLabel):
         font.setUnderline(False)
         self.setFont(font)
         self.setCursor(Qt.ArrowCursor)
-        
 
     def event(self,event:QEvent)->bool:
         if event.type()==QEvent.HoverEnter:
@@ -41,22 +40,8 @@ class ClickableLabel(QLabel):
             return super(ClickableLabel,self).event(event)
         return True
 
-    def mouseMoveEvent(self,event:QMouseEvent)->None:
-        if event.type()==QEvent.HoverEnter:
-            self.hoverEnter()
-        elif event.type()==QEvent.HoverLeave:
-            self.hoverLeave()
-            
-    def paintEvent(self,event:QPaintEvent):
-        pix = self.pixmap()
-        if pix is not None:
-            p = QPainter(self)
-            p.drawPixmap(0,0,pix)
-        else:
-            print("No pixmap :(")
-        super(ClickableLabel,self).paintEvent(event)
     def mousePressEvent(self,event:QMouseEvent)->None:
-        from PySide2.QtCore import Qt 
+        from PySide2.QtCore import Qt
         if event.button() == Qt.LeftButton:
             self.clicked.emit()
 
@@ -103,7 +88,6 @@ class KanbanWidget(QFrame):
 
         self.icon = QLabel(name_ctr)
         name_ctr.layout().addWidget(self.icon)
-        self.icon.setPixmap(self.style().standardPixmap(QStyle.SP_DesktopIcon).scaled(32, 32, Qt.KeepAspectRatio))
 
         self.name = ClickableLabel()
         self.name.setToolTip(self.tr("Edit"))
@@ -194,7 +178,11 @@ class KanbanWidget(QFrame):
                     background = data.background
                     palette.setColor(QPalette.Window,background)
                 if data.icon is not None:
-                    self.icon.setPixmap(data.icon)
+                    from PySide2.QtGui import QFontMetrics
+                    a=self.name.fontMetrics()
+                    self.icon.setPixmap(data.icon.scaled(a.height()*2,a.height()*2,Qt.KeepAspectRatio))
+                else:
+                    self.icon.setPixmap(None)
             # self.setStyleSheet(stylesheet)
                 self.setPalette(palette)
             self.setAutoFillBackground(True)
