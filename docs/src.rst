@@ -44,6 +44,14 @@ src.kanbanitemdialog module
    :undoc-members:
    :show-inheritance:
 
+src.abstractview module
+-----------------------
+
+.. automodule:: src.abstractview
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 src.kanbanwidget module
 -----------------------
 

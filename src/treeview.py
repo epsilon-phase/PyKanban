@@ -190,12 +190,15 @@ class TreeView(AbstractView):
         self.collapsed = set()
         self.completed = set()
 
+    def get_eligible_widgets(self) -> List[KanbanWidget]:
+        return list(filter(lambda x: x.parent().isVisible(), self.findChildren(KanbanWidget)))
+
     @property
-    def hide_completed(self)->bool:
+    def hide_completed(self) -> bool:
         return self.hiding_completed.isChecked()
 
     @property
-    def extraCompact(self)->bool:
+    def extraCompact(self) -> bool:
         """
         Returns true if the extra compact checkbox is checked.
         """

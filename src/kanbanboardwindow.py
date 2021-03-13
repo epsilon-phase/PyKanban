@@ -132,7 +132,7 @@ class StatusView(QFrame, AbstractView):
         Handle the aftermath of a kanbanwidget's update, move it to the 
         correct column, place it in the correct spot in the column, etc
         
-        :param widget: The widget being changd
+        :param widget: The widget being changed
         :param fromState: The previous state of the widget
         :param toState: The new state of the widget
         """
@@ -226,6 +226,9 @@ class QueueView(LabeledColumn, AbstractView):
             if len(i.item.category) > 0:
                 i.updateDisplay()
 
+    def get_eligible_widgets(self) -> List[KanbanWidget]:
+        return list(filter(lambda x: x.isVisible(), self.findChildren(KanbanWidget)))
+
 
 class KanbanBoardWidget(QFrame):
     """
@@ -260,13 +263,21 @@ class KanbanBoardWidget(QFrame):
 
         self.searchText = QLineEdit()
         self.searchText.textChanged.connect(self.filterChanged)
+        self.searchText.textChanged.connect(self.update_search_indicators)
         self.searchText.returnPressed.connect(self.filterChanged)
+        self.searchText.returnPressed.connect(self.update_search_indicators)
+        self.searchText.setClearButtonEnabled(True)
+
         labelledLayout.addRow(self.tr("Search"), self.searchText)
 
         searchNext = QPushButton(self.tr("Next"))
         searchNext.clicked.connect(lambda: [i.advance_search() for i in self.views])
+        searchNext.clicked.connect(self.update_search_indicators)
         searchPrevious = QPushButton(self.tr("Previous"))
         searchPrevious.clicked.connect(lambda: [i.rewind_search() for i in self.views])
+        searchPrevious.clicked.connect(self.update_search_indicators)
+        self.searchNext, self.searchPrevious = searchNext, searchPrevious
+
         hlayout = QHBoxLayout()
         hlayout.addWidget(searchNext)
         hlayout.addWidget(searchPrevious)
@@ -319,6 +330,13 @@ class KanbanBoardWidget(QFrame):
         # board.for_each_by_matching(lambda x,y: (x.setVisible(y) for i in x.widget),query)
         for i in self.views:
             i.filterChanged(query)
+
+    def update_search_indicators(self):
+        cv = self.views[self.tab_container.currentIndex()]
+        additional = ""
+        if cv.search_index != -1:
+            additional = f"{cv.search_index}/{len(cv.matching)}"
+        self.searchNext.setText(self.tr("Next ") + additional)
 
     def openNewItem(self, k: KanbanItem) -> None:
         dialog = KanbanItemDialog(self, None, kbb=self.board)
