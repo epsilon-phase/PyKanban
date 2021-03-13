@@ -9,6 +9,7 @@ from src.categorylist import CategoryEditor
 from src.treeview import TreeView
 from typing import *
 from pickle import PicklingError
+from src.abstractview import AbstractView
 
 
 class LabeledColumn(QScrollArea):
@@ -70,27 +71,7 @@ class LabeledColumn(QScrollArea):
         self.sort_widgets()
 
 
-class AbstractView():
-    def addKanbanItem(self, k: KanbanItem) -> None:
-        pass
-
-    def filterChanged(self, text: str) -> None:
-        pass
-
-    def updateCategories(self) -> None:
-        pass
-
-    def tabName(self) -> str:
-        pass
-
-    def newBoard(self, board: KanbanBoard) -> None:
-        """
-        Set the current board to a new one, deleting all widgets and such
-        """
-        pass
-
-
-class StatusView(QFrame):
+class StatusView(QFrame, AbstractView):
     """
     Organizes tasks by their status, i.e. if the task is available
     to be done, blocked, or completed.
@@ -195,39 +176,8 @@ class StatusView(QFrame):
     def tabName(self) -> str:
         return self.tr("Status")
 
-    def currentSearchResult(self)->Optional[KanbanWidget]:
-        if not self.matching:
-            return None
-        return self.matching[self.search_index]
-
     def scroll_to_result(self, item:KanbanWidget):
-        self.selectColumn(item.item.state()).ensureWidgetVisible(item)
-
-    def advance_search(self):
-        if not self.matching:
-            return
-        self.search_index += 1
-        self.search_index %= len(self.matching)
-        self.scroll_to_result(self.currentSearchResult())
-
-    def rewind_search(self):
-        if not self.matching:
-            return
-        self.search_index -= 1
-        self.search_index %= len(self.matching)
-        self.scroll_to_result(self.currentSearchResult())
-
-    def filterChanged(self, text: str):
-        if text != self.last_filter:
-            self.matching.clear()
-            for i in self.findChildren(KanbanWidget):
-                if i.item.matches(text):
-                    self.matching.append(i)
-            self.search_index = -1
-            self.last_filter = text
-        if not self.matching:
-            return
-        self.advance_search()
+        self.selectColumn(item.item.state()).ensureWidgetVisible(item,0,0)
 
 
 class QueueView(LabeledColumn):

@@ -297,10 +297,6 @@ class KanbanBoard:
             item_dx = i.depends_on.index(item)
             del i.depends_on[item_dx]
 
-    def resetPositions(self):
-        for i in self.items:
-            i.position = None
-
     def trim_unused_categories(self)->Set[str]:
         """
         Remove categories that don't appear in any items.

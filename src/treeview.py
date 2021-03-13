@@ -3,6 +3,7 @@ from PySide2.QtGui import QPaintEvent,QPainter, QPainterPath,QColor
 from PySide2.QtCore import Signal, QTimer,Qt,QEvent
 from src.kanban import KanbanBoard, KanbanItem, ItemState
 from src.kanbanwidget import KanbanWidget
+from src.abstractview import AbstractView
 from typing import *
 
 
@@ -128,7 +129,7 @@ class Collapser(QFrame):
         self.collapseButton.setVisible(show)
 
 
-class TreeView(QWidget):
+class TreeView(AbstractView):
     board:KanbanBoard
     #: Association between each kanbanitem and the position assigned by the
     #: layout item
@@ -182,10 +183,6 @@ class TreeView(QWidget):
         scrl.setWidgetResizable(True)
         self.scrl = scrl
         root.layout().addWidget(scrl)
-
-        self.searchIndexSelected = 0
-        self.last_filter = None
-        self.matching = []
 
         self.setLayout(root.layout())
 
@@ -391,54 +388,14 @@ class TreeView(QWidget):
         self.determine_efficiency()
         self.positions.clear()
 
-
-
-
     def widgetChange(self,widget:KanbanWidget, fromState:ItemState, toState:ItemState):
         # Don't updating the layout unless the widget is visible
         if widget.item not in self.positions:
             return
         self.relayout(self.itemChoice.currentIndex())
 
-    def currentSearchResult(self):
-        return self.matching[self.searchIndexSelected].widget_of(self.display)
-
-    def scroll_to_result(self, item:KanbanWidget):
-        self.scrl.ensureWidgetVisible(item)
-
-    def advance_search(self):
-        if not self.matching:
-            return
-        self.searchIndexSelected += 1
-        self.searchIndexSelected %= len(self.matching)
-        self.scroll_to_result(self.currentSearchResult())
-
-    def rewind_search(self):
-        if not self.matching:
-            return
-        self.searchIndexSelected -= 1
-        self.searchIndexSelected %= len(self.matching)
-        self.scroll_to_result(self.currentSearchResult())
-
-    def filterChanged(self,text:str):
-        from PySide2.QtGui import QPalette
-        if self.last_filter is None or self.last_filter != text:
-            self.matching.clear()
-            for i in self.board.items:
-                if i.matches(text):
-                    self.matching.append(i)
-            for i in self.findChildren(KanbanWidget):
-                p = i.parent()
-                if i.item in self.matching and text != '':
-                    p.setFrameStyle(QFrame.Panel|QFrame.Raised)
-                    p.setLineWidth(2)
-                else:
-                    p.setFrameStyle(QFrame.NoFrame)
-            self.last_filter = text
-            self.searchIndexSelected = -1
-        self.searchIndexSelected += 1
-        self.searchIndexSelected %= len(self.matching)
-        self.scrl.ensureWidgetVisible(self.currentSearchResult())
+    def scroll_to_result(self, widget:KanbanWidget):
+        self.scrl.ensureWidgetVisible(widget)
 
 
     def updateCategories(self):
