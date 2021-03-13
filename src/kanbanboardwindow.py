@@ -28,6 +28,7 @@ class LabeledColumn(QScrollArea):
         self.toggleButton = QPushButton(self.tr("Collapse"))
         self.toggleButton.clicked.connect(self.toggleWidgetDisplay)
         self.vlayout.addWidget(self.toggleButton)
+        self.vlayout.setMargin(0)
 
         frame = QFrame()
         frame.setLayout(self.vlayout)
@@ -36,7 +37,8 @@ class LabeledColumn(QScrollArea):
         self.widgetPanel = QFrame()
         self.widgetPanel.setLayout(self.widgetArea)
         self.vlayout.addWidget(self.widgetPanel)
-
+        self.widgetArea.setContentsMargins(0, 5, 0, 5)
+        self.widgetPanel.setContentsMargins(0, 0, 0, 0)
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
@@ -180,7 +182,7 @@ class StatusView(QFrame, AbstractView):
         self.selectColumn(item.item.state()).ensureWidgetVisible(item,0,0)
 
 
-class QueueView(LabeledColumn):
+class QueueView(LabeledColumn, AbstractView):
     kanbanWidgets: List[KanbanWidget]
 
     def __init__(self, parent: QWidget = None, board: KanbanBoard = None):
@@ -189,7 +191,7 @@ class QueueView(LabeledColumn):
         self.board = board
         self.matching = []
         self.last_filter = None
-        self.search_index=0
+        self.search_index = 0
 
     def tabName(self) -> str:
         return self.tr("Queue")
@@ -211,39 +213,8 @@ class QueueView(LabeledColumn):
             widget.setVisible(not (widget.item.completed or widget.item.blocked()))
             self.addWidget(widget)
 
-    def currentSearchResult(self)->Optional[KanbanWidget]:
-        if not self.matching:
-            return None
-        return self.matching[self.search_index]
-
     def scroll_to_result(self, item:KanbanWidget):
         self.ensureWidgetVisible(item)
-
-    def advance_search(self):
-        if not self.matching:
-            return
-        self.search_index += 1
-        self.search_index %= len(self.matching)
-        self.scroll_to_result(self.currentSearchResult())
-
-    def rewind_search(self):
-        if not self.matching:
-            return
-        self.search_index -= 1
-        self.search_index %= len(self.matching)
-        self.scroll_to_result(self.currentSearchResult())
-
-    def filterChanged(self, text: str):
-        if text != self.last_filter:
-            self.matching.clear()
-            for i in self.findChildren(KanbanWidget):
-                if i.item.matches(text) and i.isVisible() and not i.item.completed:
-                    self.matching.append(i)
-            self.search_index = -1
-            self.last_filter=text
-        if not self.matching:
-            return
-        self.advance_search()
 
     def addKanbanItem(self, k: KanbanItem) -> None:
         widg = KanbanWidget(kbi=k)

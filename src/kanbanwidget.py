@@ -133,12 +133,15 @@ class KanbanWidget(QFrame):
         complete.clicked.connect(self.complete)
         self.completeButton = complete
 
-
         buttonContainer.layout().addWidget(createChildButton)
         buttonContainer.layout().addWidget(complete)
 
         layout.addWidget(buttonContainer)
+        self.selected = False
 
+        self.setFrameStyle(QFrame.NoFrame)
+
+        self.setContentsMargins(0, 5, 0, 5)
         self.updateDisplay()
 
 
@@ -225,6 +228,19 @@ class KanbanWidget(QFrame):
 
         :param code: The way that this dialog finished, Accepted, Rejected, etc
         """
-        if code==QDialog.Accepted:
+        if code == QDialog.Accepted:
             self.item.markChanged()
 
+    def set_selected(self, sel: bool = True):
+        self.selected = sel
+        self.update()
+
+    def paintEvent(self, event: QPaintEvent):
+        if self.selected:
+            p = QPainter(self)
+            p.setRenderHint(p.HighQualityAntialiasing)
+            pen = p.pen()
+            pen.setWidth(3)
+            p.setPen(pen)
+            p.drawRoundRect(self.rect())
+        super(KanbanWidget, self).paintEvent(event)
