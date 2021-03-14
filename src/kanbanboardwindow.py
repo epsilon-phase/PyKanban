@@ -248,6 +248,7 @@ class KanbanBoardWidget(QFrame):
         self.views.append(TreeView(self, k))
 
         utilityPanel = QFrame()
+        utilityPanel.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
         utilityLayout = QVBoxLayout()
         utilityPanel.setLayout(utilityLayout)
 
@@ -295,17 +296,11 @@ class KanbanBoardWidget(QFrame):
         splitter = QSplitter()
         splitter.addWidget(utilityPanel)
         splitter.addWidget(self.tab_container)
+        self.splitter = splitter
 
         self.setLayout(QHBoxLayout())
         self.layout().addWidget(splitter)
         self.populate()
-
-        widget_counts: Dict[int, int] = {}
-        for i in self.board.items:
-            c = len(i.widget)
-            if c not in widget_counts.keys():
-                widget_counts[c] = 0
-            widget_counts[c] += 1
 
     def addKanbanItem(self, k: KanbanItem) -> None:
         """
@@ -324,7 +319,7 @@ class KanbanBoardWidget(QFrame):
 
     def filterChanged(self):
         """
-        Dispatch filterChanged events to each view
+        Dispatch filterChanged to each view
         """
         query = self.searchText.text()
         # board.for_each_by_matching(lambda x,y: (x.setVisible(y) for i in x.widget),query)

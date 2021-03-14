@@ -1,6 +1,6 @@
 from PySide2.QtWidgets import *
-from PySide2.QtGui import QPaintEvent,QPainter, QPainterPath,QColor
-from PySide2.QtCore import Signal, QTimer,Qt,QEvent
+from PySide2.QtGui import QPaintEvent, QPainter, QPainterPath, QColor
+from PySide2.QtCore import Signal, QTimer, Qt, QEvent
 from src.kanban import KanbanBoard, KanbanItem, ItemState
 from src.kanbanwidget import KanbanWidget
 from src.abstractview import AbstractView
@@ -8,15 +8,15 @@ from typing import *
 
 
 class TreeArea(QFrame):
-    def __init__(self,parent=None,board=None):
-        super(TreeArea,self).__init__(parent)
-        self.board=board
-        self.lastLen=0
-        self.widgets={}
+    def __init__(self, parent=None, board=None):
+        super(TreeArea, self).__init__(parent)
+        self.board = board
+        self.lastLen = 0
+        self.widgets = {}
         self.active = None
-        self.setAttribute(Qt.WA_Hover,True)
+        self.setAttribute(Qt.WA_Hover, True)
 
-    def event(self, event:QEvent)->bool:
+    def event(self, event: QEvent) -> bool:
         if event.type() == QEvent.MouseButtonRelease:
             self.active = None
             for i in self.findChildren(KanbanWidget):
@@ -25,28 +25,26 @@ class TreeArea(QFrame):
                         self.active = None
                     else:
                         self.active = i.parent()
+                        return True
                     self.repaint()
-                    break
+        return super(TreeArea, self).event(event)
 
-        return super(TreeArea,self).event(event)
-
-    def paintEvent(self,event:QPaintEvent):
+    def paintEvent(self, event: QPaintEvent):
         """
         Draw lines to denote each item's parents/children
         """
         from PySide2.QtCore import QPointF
-        print("painting treeview")
-        path = QPainterPath(QPointF(0,0))
+        path = QPainterPath(QPointF(0, 0))
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         offset = 5.0
-        if len(self.board.items)!=self.lastLen:
+        if len(self.board.items) != self.lastLen:
             self.board.items[0].widget_of(self)
-            self.widgets = {x:x.widget_of(self) for x in self.board.items}
-            self.lastLen=len(self.board.items)
+            self.widgets = {x: x.widget_of(self) for x in self.board.items}
+            self.lastLen = len(self.board.items)
         else:
             pass
-        widgets=self.widgets
+        widgets = self.widgets
         active = QPainterPath()
         for i in self.board.items:
             widget = widgets[i]
@@ -54,32 +52,38 @@ class TreeArea(QFrame):
             if not widget.parent().isVisible():
                 continue
             x1, y1 = widget.pos().x(), widget.pos().y()
-            x1 = x1+ widget.size().width()//2
+            x1 = x1 + widget.size().width() // 2
             y1 = y1 + widget.size().height()
             # Offset each edge by a different amount for each child
             offmod = 0
             for d in i.depends_on:
-                child:QWidget = widgets[d]
-                child=child.parent()
+                child: QWidget = widgets[d]
+                child = child.parent()
                 if not child.isVisible():
                     continue
                 x2, y2 = child.pos().x(), child.pos().y()
                 x2 = x2 + child.size().width() // 2
-                #if widget.underMouse() or child.underMouse() \
+                # if widget.underMouse() or child.underMouse() \
                 if widget == self.active or child == self.active or widget.underMouse() or child.underMouse():
                     active.moveTo(x1, y1)
                     active.lineTo(x1, y1 + offset + offmod)
                     active.lineTo(x2, y1 + offset + offmod)
                     active.lineTo(x2, y2 - offset + offmod)
                     active.lineTo(x2, y2)
-                    active.addEllipse(x2-2.5,y2-2.5,5,5)
+                    if x1 != x2:
+                        active.moveTo((x2 + x1) // 2, y1 + offset + offmod + 5)
+                        dir = 1 if x1 < x2 else -1
+                        active.lineTo((x2 + x1) // 2 + 5 * dir, y1 + offset + offmod)
+                        active.moveTo((x2 + x1) // 2, y1 - 5 + offset + offmod)
+                        active.lineTo((x2 + x1) // 2 + 5 * dir, y1 + offset + offmod)
+                    active.addEllipse(x2 - 2.5, y2 - 2.5, 5, 5)
                 else:
-                    path.moveTo(x1,y1)
+                    path.moveTo(x1, y1)
                     path.lineTo(x1, y1 + offset + offmod)
                     path.lineTo(x2, y1 + offset + offmod)
                     path.lineTo(x2, y2 - offset + offmod)
                     path.lineTo(x2, y2)
-                    path.addEllipse(x2-2.5,y2-2.5,5,5)
+                    path.addEllipse(x2 - 2.5, y2 - 2.5, 5, 5)
                 offmod += 2
                 offmod %= 30
         p = painter.pen()
@@ -90,7 +94,7 @@ class TreeArea(QFrame):
         painter.setPen(p)
         painter.drawPath(active)
         print(active.length())
-        super(TreeArea,self).paintEvent(event)
+        super(TreeArea, self).paintEvent(event)
 
 
 class Collapser(QFrame):
@@ -104,7 +108,7 @@ class Collapser(QFrame):
         self.collapseButton.clicked.connect(self.toggle)
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(self.collapseButton)
-        self.setSizePolicy(QSizePolicy.MinimumExpanding,QSizePolicy.MinimumExpanding)
+        self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.layout().setMargin(0)
 
     def toggle(self):
@@ -114,70 +118,79 @@ class Collapser(QFrame):
             self.collapseButton.setText(self.tr("Collapse"))
         self.collapseToggle.emit(self)
 
-    def event(self,event:QEvent):
-        if event.type() == QEvent.LayoutRequest and self.layout().count()==1:
+    def event(self, event: QEvent):
+        if event.type() == QEvent.LayoutRequest and self.layout().count() == 1:
             self.deleteLater()
             self.parent().layout().removeWidget(self)
             p = self
-            while not isinstance(p,TreeView):
-                p=p.parent()
+            while not isinstance(p, TreeView):
+                p = p.parent()
             p.relayout()
             return True
-        return super(Collapser,self).event(event)
+        return super(Collapser, self).event(event)
 
     def toggleButtonShown(self, show):
         self.collapseButton.setVisible(show)
 
 
 class TreeView(AbstractView):
-    board:KanbanBoard
+    board: KanbanBoard
     #: Association between each kanbanitem and the position assigned by the
     #: layout item
-    positions:Dict[KanbanItem,Tuple[int,int]]
+    positions: Dict[KanbanItem, Tuple[int, int]]
     #: The set of all kanbanitems whose children should not be considered in laying out the tree
-    collapsed:Set[KanbanItem]
+    collapsed: Set[KanbanItem]
     #: The set of all kanbanitems considered completed for the sake of hiding
-    completed:Set[KanbanItem]
-    itemChoice:QComboBox
-    hiding_completed:QCheckBox
-    extraCompactCheckbox:QCheckBox
+    completed: Set[KanbanItem]
+    #: The combobox uses to select the root of the tree being shown
+    itemChoice: QComboBox
+    #: The checkbox which is used to control whether or not completed items
+    #: are shown
+    hiding_completed: QCheckBox
+    #: The checkbox used to determine if the extra-aggressive space saving
+    #: layout is used.
+    extraCompactCheckbox: QCheckBox
 
-    def __init__(self,parent:QWidget=None,board:KanbanBoard=None):
-        super(TreeView,self).__init__(parent)
+    def __init__(self, parent: QWidget = None, board: KanbanBoard = None):
+        super(TreeView, self).__init__(parent)
         assert board is not None
         self.board = board
-        self.finishedAdding=False
+        self.finishedAdding = False
         root = QFrame()
         root.setLayout(QVBoxLayout())
 
         headerFrame = QFrame()
         headerFrame.setLayout(QFormLayout())
 
-        self.itemChoice=QComboBox()
+        self.itemChoice = QComboBox()
         self.itemChoice.currentIndexChanged.connect(self.relayout)
-        headerFrame.layout().addRow(self.tr("Root:"),self.itemChoice)
+        self.itemChoice.setEditable(True)
+        self.itemChoice.setInsertPolicy(QComboBox.NoInsert)
+        headerFrame.layout().addRow(self.tr("Root:"), self.itemChoice)
+
         self.hiding_completed = QCheckBox(self.tr("Hide Completed tasks"))
         self.hiding_completed.stateChanged.connect(self.relayout)
         headerFrame.layout().addWidget(self.hiding_completed)
-        headerFrame.setSizePolicy(QSizePolicy.Maximum,QSizePolicy.Maximum)
+        headerFrame.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
 
         self.extraCompactCheckbox = QCheckBox(self.tr("Extra Compact"))
-        self.extraCompactCheckbox.stateChanged.connect(lambda _:self.relayout())
-        self.extraCompactCheckbox.setToolTip(self.tr("Make the tree more compact, potentially at the cost of readability"))
+        self.extraCompactCheckbox.stateChanged.connect(lambda _: self.relayout())
+        self.extraCompactCheckbox.setToolTip(
+            self.tr("Make the tree more compact, potentially at the cost of readability"))
         headerFrame.layout().addWidget(self.extraCompactCheckbox)
 
         root.layout().addWidget(headerFrame)
 
-        display = TreeArea(self,board)
+        display = TreeArea(self, board)
         self.grd = QGridLayout()
         self.grd.setVerticalSpacing(30)
         self.grd.setHorizontalSpacing(30)
         display.setLayout(self.grd)
-        
-        self.display=display
+
+        self.display = display
         print(display)
 
-        display.setSizePolicy(QSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding))
+        display.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
         scrl = QScrollArea()
         scrl.setWidget(display)
         scrl.setWidgetResizable(True)
@@ -204,20 +217,20 @@ class TreeView(AbstractView):
         """
         return self.extraCompactCheckbox.isChecked()
 
-    def addKanbanItem(self, k:KanbanItem) -> None:
+    def addKanbanItem(self, k: KanbanItem) -> None:
         container = Collapser(self)
-        widget = KanbanWidget(container,k)
+        widget = KanbanWidget(container, k)
         container.layout().addWidget(widget)
-        self.grd.addWidget(container,0,0,1,1)
+        self.grd.addWidget(container, 0, 0, 1, 1)
         container.setVisible(False)
         container.collapseToggle.connect(self.collapse)
         widget.setMinimumWidth(400)
-        self.itemChoice.addItem(k.name,k)
-        self.itemChoice.setItemData(self.itemChoice.count()-1,k,32)
+        self.itemChoice.addItem(k.name, k)
+        self.itemChoice.setItemData(self.itemChoice.count() - 1, k, 32)
         if self.finishedAdding:
             self.relayout(self.itemChoice.currentIndex())
 
-    def collapse(self,collapser:Collapser):
+    def collapse(self, collapser: Collapser):
         """
         Handle a widget signalling that it should be collapsed,
         that is:
@@ -234,21 +247,22 @@ class TreeView(AbstractView):
         else:
             self.collapsed.add(item)
         self.relayout(self.itemChoice.currentIndex())
-        #Due to the way that widget size/position are calculated, this
-        #is, unfortunately, necessary.
-        QTimer.singleShot(1,partial(self.scrl.ensureWidgetVisible,collapser))
+        # Due to the way that widget size/position are calculated, this
+        # is, unfortunately, necessary.
+        QTimer.singleShot(1, partial(self.scrl.ensureWidgetVisible, collapser))
 
     def determine_efficiency(self):
-        max_x=0
-        max_y=0
-        for (x,y) in self.positions.values():
-            max_x=max(max_x,x)
-            max_y=max(max_y,y)
+        max_x = 0
+        max_y = 0
+        for (x, y) in self.positions.values():
+            max_x = max(max_x, x)
+            max_y = max(max_y, y)
         if max_x == 0 or max_y == 0:
             return
-        print(f"Layout Efficiency: {100*(len(self.positions)/(max_x*max_y))}%")
+        print(f"Layout Efficiency: {100 * (len(self.positions) / (max_x * max_y))}%")
 
-    def reposition_multi_child(self, k:KanbanItem, completed:bool, x:int,depth:int)->Tuple[Tuple[int,int],Tuple[int,bool]]:
+    def reposition_multi_child(self, k: KanbanItem, completed: bool, x: int, depth: int) -> Tuple[
+        Tuple[int, int], Tuple[int, bool]]:
         """
         Single case of reposition, for when the task has more than one dependency
 
@@ -265,38 +279,38 @@ class TreeView(AbstractView):
         avgpos = 0
         avgcount = 0
         largest = 0
-        viable = list(filter(lambda x: x not in self.positions,k.depends_on))
-        non_viable = filter(lambda x: x in self.positions and x.depends_on == [], k.depends_on)
+        viable = list(filter(lambda item: item not in self.positions and not (
+                    item.state() == ItemState.COMPLETED and self.hide_completed), k.depends_on))
+        non_viable = filter(lambda item: item in self.positions and item.depends_on == [], k.depends_on)
         if self.extraCompact:
-            for z in range(x,max(0,x-len(viable)//2),-1):
-                if (z, depth+1) in self.positions.values():
+            for z in range(x, max(0, x - len(viable) // 2), -1):
+                if (z, depth + 1) in self.positions.values():
                     break
                 x = z
         for i in viable:
-            x2,c=self.reposition(i,x,depth+1)
+            x2, c = self.reposition(i, x, depth + 1)
             if i not in self.positions:
                 continue
-            x = max(x2,x)
+            x = max(x2, x)
             completed = completed and c
             avgpos += self.positions[i][0]
             avgcount += 1
             largest = x
         if avgcount == 0:
-            self.positions[k] = (x,depth)
-            currentpos = x,depth
-            ret = x+1, completed
+            self.positions[k] = (x, depth)
+            currentpos = x, depth
+            ret = x + 1, completed
         else:
             avgpos //= avgcount
-            currentpos = (avgpos,depth)
-            ret = largest+1, completed
+            currentpos = (avgpos, depth)
+            ret = largest + 1, completed
         for i in non_viable:
-            pos = self.positions[i][0], max(self.positions[i][1],depth+1)
+            pos = self.positions[i][0], max(self.positions[i][1], depth + 1)
             if pos not in self.positions.values():
-                self.positions[i]=pos
+                self.positions[i] = pos
         return currentpos, ret
 
-
-    def reposition(self, k:KanbanItem,x:int=0,depth:int=0)->Tuple[int,bool]:
+    def reposition(self, k: KanbanItem, x: int = 0, depth: int = 0) -> Tuple[int, bool]:
         """
 
         See :doc:`dag_layout` for a more intensive discussion of the issues
@@ -311,61 +325,61 @@ class TreeView(AbstractView):
         :returns: The next available horizontal coordinate
         """
         currentpos = None
-        ret:Tuple[int,bool] = 0,False
+        ret: Tuple[int, bool] = 0, False
         completed = False
         if k.state() == ItemState.COMPLETED:
             completed = True
         if k in self.positions:
             print(f"double visited: {self.name}")
-            ret = (x+1,completed)
+            ret = (x + 1, completed)
         elif k.depends_on == [] or k in self.collapsed or (completed and self.hide_completed):
             if k.depends_on == [] and completed and self.hide_completed:
                 pass
             else:
-                currentpos = (x,depth)
-            ret = x+1, completed
-        elif len(k.depends_on)==1:
+                currentpos = (x, depth)
+            ret = x + 1, completed
+        elif len(k.depends_on) == 1:
             if k.depends_on[0] not in self.positions:
-                x,c=self.reposition(k.depends_on[0],x,depth+1)
+                x, c = self.reposition(k.depends_on[0], x, depth + 1)
                 if completed and c:
                     self.completed.add(k)
-                currentpos = (self.positions[k.depends_on[0]][0],depth)
-                ret = currentpos[0]+1, completed
+                currentpos = (self.positions[k.depends_on[0]][0], depth)
+                ret = currentpos[0] + 1, completed
             else:
-                currentpos = x,depth
-                self.positions[k]=(x, depth)
-                ret = x+1, completed
-        else: #Multiple children
-            currentpos, (x,completed)= self.reposition_multi_child(k,completed,x,depth)
+                currentpos = x, depth
+                self.positions[k] = (x, depth)
+                ret = x + 1, completed
+        else:  # Multiple children
+            currentpos, (x, completed) = self.reposition_multi_child(k, completed, x, depth)
             ret = x, completed
         # Nudge the item a space over if necessary. Should, in general, avoid issues.
         if currentpos is not None:
-            if currentpos in self.positions.values():
+            while currentpos in self.positions.values():
                 print("Nudging")
-                currentpos=currentpos[0]+1,currentpos[1]
+                currentpos = currentpos[0] + 1, currentpos[1]
             self.positions[k] = currentpos
         if completed:
             self.completed.add(k)
         return ret
 
-    def check_overlap(self)->None:
+    def check_overlap(self) -> None:
         seen = set()
-        for item,pos in self.positions.items():
+        for item, pos in self.positions.items():
             if pos in seen:
                 print(f"Found doubled up position {item.name}")
             seen.add(pos)
 
     def remove_deleted(self):
         items = self.findChildren(Collapser)
-        items = filter(lambda x:x.layout().count()==1,items)
+        items = filter(lambda x: x.layout().count() == 1, items)
         for i in items:
             self.layout().removeWidget(i)
             i.deleteLater()
 
-    def relayout(self,index=None):
+    def relayout(self, index=None):
         if index is None:
             index = self.itemChoice.currentIndex()
-        items:List[KanbanWidget] = self.findChildren(KanbanWidget)
+        items: List[KanbanWidget] = self.findChildren(KanbanWidget)
         self.remove_deleted()
         self.positions.clear()
         self.completed.clear()
@@ -384,39 +398,38 @@ class TreeView(AbstractView):
             if show:
                 self.grd.removeWidget(i.parent())
                 pos = self.positions[i.item]
-                self.grd.addWidget(i.parent(),pos[1],pos[0],1,1)
-                i.parent().toggleButtonShown(len(i.item.depends_on)>0)
+                self.grd.addWidget(i.parent(), pos[1], pos[0], 1, 1)
+                i.parent().toggleButtonShown(len(i.item.depends_on) > 0)
         self.display.setUpdatesEnabled(True)
         self.display.update()
         self.determine_efficiency()
         self.positions.clear()
 
-    def widgetChange(self,widget:KanbanWidget, fromState:ItemState, toState:ItemState):
+    def widgetChange(self, widget: KanbanWidget, fromState: ItemState, toState: ItemState):
         # Don't updating the layout unless the widget is visible
         if widget.item not in self.positions:
             return
         self.relayout(self.itemChoice.currentIndex())
 
-    def scroll_to_result(self, widget:KanbanWidget):
+    def scroll_to_result(self, widget: KanbanWidget):
         self.scrl.ensureWidgetVisible(widget)
 
-
     def updateCategories(self):
-        for i in filter(lambda x:len(x.item.category)>0,self.findChildren(KanbanWidget)):
+        for i in filter(lambda x: len(x.item.category) > 0, self.findChildren(KanbanWidget)):
             i.updateDisplay()
 
-    def tabName(self)->str:
+    def tabName(self) -> str:
         return "Tree"
 
-    def populate(self)->None:
+    def populate(self) -> None:
         for i in self.board.items:
             self.addKanbanItem(i)
         self.relayout(self.itemChoice.currentIndex())
-        self.finishedAdding=True
+        self.finishedAdding = True
 
-    def newBoard(self,board:KanbanBoard)->None:
+    def newBoard(self, board: KanbanBoard) -> None:
         for i in self.findChildren(KanbanWidget):
             self.layout().removeWidget(i)
             i.deleteLater()
-        self.finishedAdding=False
+        self.finishedAdding = False
         self.populate()

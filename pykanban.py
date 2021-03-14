@@ -17,7 +17,7 @@ def run():
         except FileNotFoundError:
             pass
     henlo=KanbanBoardWindow(kbb)
-    henlo.resize(640,480)
+    henlo.resize(1000, 1000)
     henlo.show()
     app.exec_()
 
