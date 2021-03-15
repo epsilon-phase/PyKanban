@@ -394,14 +394,18 @@ class KanbanBoardWindow(QMainWindow):
         open_options.triggered.connect(self.open_settings)
 
         self.autosave_timer = QTimer(self)
-        self.autosave_timer.setInterval(1000 * int(QSettings().value("Recovery/Interval")))
+        self.autosave_timer.setInterval(1000 * QSettings().value("Recovery/Interval", 120, int))
         self.autosave_timer.timeout.connect(self.autosave)
         self.autosave_timer.start()
         # self.setWindowModified(True)
         self.updateTitle()
-        self.check_and_prompt_backup()
+        self.prompt_to_recover()
 
-    def check_and_prompt_backup(self):
+    def prompt_to_recover(self):
+        """
+        Ask the user if they want to load the .bak'd up autosave of the current file
+        :return:
+        """
         import os
         if self.kanban.board.filename and os.path.isfile(self.kanban.board.filename + '.bak'):
             choice = QMessageBox.question(self, "Recovery", self.tr("Do you want to load from an autosave?"),
@@ -504,6 +508,7 @@ class KanbanBoardWindow(QMainWindow):
         if thing[0] == '':
             return
         try:
+            self.prompt_to_recover()
             new_kanban = KanbanBoard.load(thing[0])
             self.kanban.newBoard(new_kanban)
             self.updateTitle()

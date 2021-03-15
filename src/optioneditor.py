@@ -37,8 +37,8 @@ class OptionWidget(QWidget):
     def __init__(self, option_path: str, name: str, description: str, t: type, parent: QWidget = None):
         """
         A widget that holds everything necessary to configure a simple option
-        :param option_path:
-        :param name:
+        :param option_path: The option path that will be set.
+        :param name: The displayed name of the setting
         :param description: The visible description of what the option does
         :param t: The type of the widget
         :param parent:
