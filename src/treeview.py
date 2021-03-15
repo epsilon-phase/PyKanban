@@ -251,7 +251,12 @@ class TreeView(AbstractView):
         # is, unfortunately, necessary.
         QTimer.singleShot(1, partial(self.scrl.ensureWidgetVisible, collapser))
 
-    def determine_efficiency(self):
+    def determine_efficiency(self) -> float:
+        """
+        Calculate how much of the space used in the layout is filled.
+
+        :return: The percentage of the space which is used by the layout in question
+        """
         max_x = 0
         max_y = 0
         for (x, y) in self.positions.values():
@@ -259,7 +264,9 @@ class TreeView(AbstractView):
             max_y = max(max_y, y)
         if max_x == 0 or max_y == 0:
             return
-        print(f"Layout Efficiency: {100 * (len(self.positions) / (max_x * max_y))}%")
+        efficiency = 100 * (len(self.positions) / (max_x * max_y))
+        print(f"Layout Efficiency: {efficiency}%")
+        return efficiency
 
     def reposition_multi_child(self, k: KanbanItem, completed: bool, x: int, depth: int) -> Tuple[
         Tuple[int, int], Tuple[int, bool]]:

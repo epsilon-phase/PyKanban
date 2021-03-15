@@ -10,6 +10,7 @@ from src.treeview import TreeView
 from typing import *
 from pickle import PicklingError
 from src.abstractview import AbstractView
+from src.optioneditor import OptionDialog
 
 
 class LabeledColumn(QScrollArea):
@@ -388,12 +389,35 @@ class KanbanBoardWindow(QMainWindow):
         search_shortcut = QShortcut(QKeySequence("Ctrl+F"), self)
         search_shortcut.activated.connect(self.selectSearchBar)
 
+        other = mb.addMenu(self.tr("&Other"))
+        open_options = other.addAction(self.tr("Open Options"))
+        open_options.triggered.connect(self.open_settings)
+
         self.autosave_timer = QTimer(self)
         self.autosave_timer.setInterval(1000 * int(QSettings().value("Recovery/Interval")))
         self.autosave_timer.timeout.connect(self.autosave)
         self.autosave_timer.start()
         # self.setWindowModified(True)
         self.updateTitle()
+        self.check_and_prompt_backup()
+
+    def check_and_prompt_backup(self):
+        import os
+        if self.kanban.board.filename and os.path.isfile(self.kanban.board.filename + '.bak'):
+            choice = QMessageBox.question(self, "Recovery", self.tr("Do you want to load from an autosave?"),
+                                          QMessageBox.Yes | QMessageBox.No)
+            if choice == QMessageBox.Yes:
+                self.kanban.newBoard(KanbanBoard.load(self.kanban.board.filename + '.bak'))
+
+    def open_settings(self):
+        settings_dialog = OptionDialog(self)
+        settings_dialog.finished.connect(self.handle_setting_changes)
+        settings_dialog.show()
+
+    def handle_setting_changes(self, code):
+        if code == QDialog.Rejected:
+            return
+        self.autosave_timer.setInterval(1000 * QSettings().value("Recovery/Interval", 100, int))
 
     def updateTitle(self):
         """
@@ -428,6 +452,7 @@ class KanbanBoardWindow(QMainWindow):
         return filename
 
     def openSave(self):
+        import os
         from src.settingNames import LAST_DOCUMENT_USED
         filename = self.kanban.board.filename
         if self.kanban.board.filename is None:
@@ -440,6 +465,9 @@ class KanbanBoardWindow(QMainWindow):
             self.kanban.board.save(filename)
         except PicklingError:
             QErrorMessage.showMessage("Failed to save, sorry :(")
+
+        if os.path.isfile(self.kanban.board.filename + '.bak'):
+            os.remove(self.kanban.board.filename + '.bak')
         self.setWindowModified(False)
         self.updateTitle()
 
@@ -447,15 +475,14 @@ class KanbanBoardWindow(QMainWindow):
         """
         Save the document if the document has changed and autosaving is enabled
         """
-        if self.isWindowModified() and bool(QSettings().value("Recovery/autosave")):
+        if self.isWindowModified() and bool(QSettings().value("Recovery/AutoSave", False, bool)):
             print("Autosaving :D")
-            if self.board.filename is not None:
+            if self.kanban.board.filename is not None:
                 try:
-                    self.kanban.board.save(filename)
+                    self.kanban.board.save(self.kanban.board.filename + '.bak', False)
                 except PicklingError:
                     QErrorMessage.showMessage("Failed to save, sorry :(")
                 print("Autosaved :)")
-                self.setWindowModified(False)
 
     def openSaveAs(self):
         from src.settingNames import LAST_DOCUMENT_USED

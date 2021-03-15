@@ -313,7 +313,7 @@ class KanbanBoard:
             self.categories.remove(i)
         return not_used
 
-    def save(self, filename:str) -> None:
+    def save(self, filename: str, update_stored: bool = True) -> None:
         """
         Save the kanban board to a file
         
@@ -322,11 +322,12 @@ class KanbanBoard:
         if filename is not None:
             self.filename = filename
         else:
-            filename = self.filename
-        if filename.endswith('.json'):
+            if update_stored:
+                filename = self.filename
+        if filename.endswith('.json') or filename.endswith('.json.bak'):
             self.export(filename)
             return
-        with open(filename,'wb') as f:
+        with open(filename, 'wb') as f:
             thing = pickle.dumps(self)
             f.write(thing)
 
@@ -381,7 +382,7 @@ class KanbanBoard:
         
         :param filename: The filename to load the kanban board from
         """
-        if filename.endswith(".json"):
+        if filename.endswith(".json") or filename.endswith('.json.bak'):
             return KanbanBoard.loadJson(filename)
         else:
             with open(filename,'rb') as f:
