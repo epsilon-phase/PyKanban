@@ -125,12 +125,12 @@ class KanbanWidget(QFrame):
 
         self.editButton = QPushButton(self.tr("Edit"))
 
-        buttonContainer = QFrame()
-        buttonContainer.setLayout(QHBoxLayout())
-        self.editButton.clicked.connect(self.openEditingDialog)
-        buttonContainer.layout().addWidget(self.editButton)
+        button_layout = QHBoxLayout()
 
-        createChildButton = QPushButton(self.tr("Add"))
+        self.editButton.clicked.connect(self.openEditingDialog)
+        button_layout.addWidget(self.editButton)
+
+        createChildButton = QPushButton(self.tr("Add Child"))
         createChildButton.setToolTip(self.tr("Create Child task"))
         createChildButton.clicked.connect(self.createChildTask)
 
@@ -138,10 +138,10 @@ class KanbanWidget(QFrame):
         complete.clicked.connect(self.complete)
         self.completeButton = complete
 
-        buttonContainer.layout().addWidget(createChildButton)
-        buttonContainer.layout().addWidget(complete)
+        button_layout.addWidget(createChildButton)
+        button_layout.layout().addWidget(complete)
 
-        layout.addWidget(buttonContainer)
+        layout.addLayout(button_layout)
         self.selected = False
 
         self.setFrameStyle(QFrame.NoFrame)

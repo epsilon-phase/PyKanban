@@ -214,6 +214,7 @@ class KanbanItemDialog(QDialog):
 
         layout.addWidget(container)
 
+        self.setAttribute(Qt.WA_DeleteOnClose, True)
         self.setWindowModality(Qt.NonModal)
         self.setModal(False)
         self.updateFromItem()

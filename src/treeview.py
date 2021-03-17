@@ -93,7 +93,6 @@ class TreeArea(QFrame):
         p.setColor(Qt.darkYellow)
         painter.setPen(p)
         painter.drawPath(active)
-        print(active.length())
         super(TreeArea, self).paintEvent(event)
 
 

@@ -177,9 +177,9 @@ class KanbanItem:
             self.remove_category(category)
 
     def __getstate__(self):
-        state = dict((slot,getattr(self,slot))
-            for slot in self.__slots__
-            if hasattr(self,slot))
+        state = dict((slot, getattr(self, slot))
+                     for slot in self.__slots__
+                     if hasattr(self, slot))
         del state['widget']
         if 'position' in state.keys():
             del state['position']
@@ -232,10 +232,10 @@ class KanbanBoard:
     category_data: Dict[str, CategoryData]
 
     def __init__(self):
-        self.items=[]
-        self.filename=None
-        self.categories=set()
-        self.category_data=dict()
+        self.items = []
+        self.filename = None
+        self.categories = set()
+        self.category_data = dict()
 
     def for_each_by_matching(self,func:Callable[[KanbanItem,bool],None],query:str)->None:
         """
@@ -318,12 +318,13 @@ class KanbanBoard:
         Save the kanban board to a file
         
         :param filename: The file that will be dumped to
+        :param update_stored: Update the filename stored in the file
         """
         if filename is not None:
-            self.filename = filename
-        else:
             if update_stored:
-                filename = self.filename
+                self.filename = filename
+        else:
+            filename = self.filename
         if filename.endswith('.json') or filename.endswith('.json.bak'):
             self.export(filename)
             return
@@ -361,8 +362,8 @@ class KanbanBoard:
             if id(i) in seen:
                 print("Found duplicate")
                 del i
-
-            seen.add(id(i))
+            else:
+                seen.add(id(i))
 
         stack = list(self.items)
         while len(stack)>0:
@@ -376,29 +377,32 @@ class KanbanBoard:
     Decoder = None
 
     @staticmethod
-    def load(filename:str)->KanbanBoard:
+    def load(filename: str) -> KanbanBoard:
         """
         Load a kanbanboard from a file
         
         :param filename: The filename to load the kanban board from
         """
         if filename.endswith(".json") or filename.endswith('.json.bak'):
-            return KanbanBoard.loadJson(filename)
+            ret = KanbanBoard.loadJson(filename)
         else:
-            with open(filename,'rb') as f:
-                c = pickle.load(f)
-                c._fix_missing()
-                return c
+            with open(filename, 'rb') as f:
+                ret = pickle.load(f)
+                ret._fix_missing()
+        if filename.endswith('.bak'):
+            filename = filename[0:-4]
+        ret.filename = filename
+        return ret
 
     @staticmethod
-    def loadJson(filename:str):
+    def loadJson(filename: str) -> KanbanBoard:
         if KanbanBoard.Decoder is None:
             from src.serializers import as_kanban_board
             KanbanBoard.Decoder = as_kanban_board
-        with open(filename,'r') as f:
-            return json.load(f,object_hook=KanbanBoard.Decoder)
+        with open(filename, 'r') as f:
+            return json.load(f, object_hook=KanbanBoard.Decoder)
 
-    def toGraphViz(self)->str:
+    def toGraphViz(self) -> str:
         """
         Create a directed graph based on the current item tree.
 
@@ -406,15 +410,14 @@ class KanbanBoard:
         corresponding to the kanbanboard
         """
         lines = ["digraph G{"]
-        ids = {v:idx for idx,v in enumerate(self.items)}
+        ids = {v: idx for idx, v in enumerate(self.items)}
         for i in self.items:
-            desc = i.description.replace("\n","<br/>")
+            desc = i.description.replace("\n", "<br/>")
             color=""
             if i.completed:
                 color='green'
             elif i.state() == ItemState.BLOCKED:
                 color='red'
-
             if color != '':
                 color=f"bgcolor=\"{color}\""
             table = f"<TABLE {color}><tr><td>{i.name}</td></tr>"

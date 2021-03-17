@@ -49,7 +49,6 @@ def as_kanban_board(dct:dict):
             for idx,val in enumerate(i.depends_on):
                 i.depends_on[idx]=board.items[val]
         board.categories = set(dct['categories'])
-        board.filename = dct['filename']
 
         return board
     else:
@@ -85,7 +84,6 @@ class KanbanBoardEncoder(JSONEncoder):
             if item.background is not None:
                 data['background'] = ColorToTuple(item.background)
             if item.icon is not None:
-
                 ba = QByteArray()
                 buffer = QBuffer(ba)
                 buffer.open(QIODevice.WriteOnly)

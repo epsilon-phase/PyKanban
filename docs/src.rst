@@ -82,6 +82,13 @@ src.treeview module
    :undoc-members:
    :show-inheritance:
 
+src.widgets.labelledcolumn module
+------------------
+.. automodule:: src.widgets.labelledcolumn
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Module contents
 ---------------
 

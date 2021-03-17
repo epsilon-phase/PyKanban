@@ -1,4 +1,3 @@
-
 ============
 Starting Out
 ============
@@ -7,7 +6,19 @@ Starting Out
 
 Kanban is a very simple way that you can organize tasks and manage your projects.
 
-This means that it may very well be ideal for your usage.
+This means that it may very well be ideal for your usage given that the following is true:
+
+1. You don't need assignment tracking
+    * No multi-user support is planned for 1.0, but it may be added if there's sufficient interest
+2. You can handle syncing between multiple devices, or you don't need syncing
+
+    For what it's worth, Syncthing_ is an excellent program in our experience for this, relatively simple to set up, and,
+    with some care, should be quite suitable for this. [1]_
+3.
+
+.. [1] That may include, ensuring that the file is completely synced before opening, ensuring that the filename
+    is the same, but alleviating this will be factored into future development.
+.. _Syncthing: https://syncthing.net/
 
 Tasks are organized by whether or not they are blocked, that is, they depend on another task to be completed before the task itself can be done. 
 Once a task is completed the tasks that depend on it may be placed back into the available column. 
@@ -64,9 +75,10 @@ No changes are applied to the task until you press the accept button.
 Category Editing
 ----------------
 
-Categories are able to have foreground and background colors 
+Categories are able to have an icon and foreground and background colors
 assigned to them, in order to make the items more distinct in the
-UI. Once set they can be cleared.
+UI. Once set they can be cleared. Icons are stored in the save file,
+so they should not need to be present after setting them.
 
 
 Example: Managing tasks for this project
@@ -110,10 +122,10 @@ based on categories.
 
 Working through the tasks produces a relatively 
 sensible ordering of a set of tasks that you can 
-proceed through in without too much thought [1]_.
+proceed through in without too much thought [2]_.
 
 Setting priorities on tasks allow further control 
 over what order tasks are presented to you in.
 
-.. [1] At least, if you're someone like us who don't much care for forethought
+.. [2] At least, if you're someone like us who don't much care for forethought
 
