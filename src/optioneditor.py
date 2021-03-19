@@ -81,17 +81,21 @@ class OptionWidget(QWidget):
 
 class OptionDialog(QDialog):
     def __init__(self, parent=None):
+        from src.settingNames import AUTOSAVE_ENABLED, AUTOSAVE_INTERVAL, RESTORE_VIEW_SETTINGS
         super(OptionDialog, self).__init__(parent)
 
         self.setLayout(QVBoxLayout())
-        self.layout().addWidget(OptionWidget('Recovery/AutoSave', "Enable Autosave",
+        self.layout().addWidget(OptionWidget(AUTOSAVE_ENABLED, "Enable Autosave",
                                              """
                                              Enable saving your document regularly.
                                              
                                              Autosaves do not overwrite the original file, so you will be asked whether you want to load from it or not
                                              """, bool))
-        self.layout().addWidget(OptionWidget('Recovery/Interval', 'Autosave Interval',
+        self.layout().addWidget(OptionWidget(AUTOSAVE_INTERVAL, 'Autosave Interval',
                                              "How many seconds between saves.", (int, 30, 10000)))
+        self.layout().addWidget(OptionWidget(RESTORE_VIEW_SETTINGS, self.tr("Restore View Settings"),
+                                             """Restore view settings on save.
+                                             """, bool))
         accept_button = QPushButton(self.tr("&Accept"))
         accept_button.clicked.connect(self.update_settings)
         accept_button.clicked.connect(self.accept)

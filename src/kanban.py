@@ -230,14 +230,17 @@ class KanbanBoard:
     #: Association between the category and the optional styling data that
     #: may be associated to it.
     category_data: Dict[str, CategoryData]
+    #: Data used to save the last settings of the views.
+    view_settings: List[Dict[Any, Any]]
 
     def __init__(self):
         self.items = []
         self.filename = None
         self.categories = set()
         self.category_data = dict()
+        self.view_settings = []
 
-    def for_each_by_matching(self,func:Callable[[KanbanItem,bool],None],query:str)->None:
+    def for_each_by_matching(self, func: Callable[[KanbanItem, bool], None], query: str) -> None:
         """
         Call a function on each item, also passing in a bool indicating its matchiness
 

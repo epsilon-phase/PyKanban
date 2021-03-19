@@ -119,8 +119,21 @@ class StatusView(QFrame, AbstractView):
     def tabName(self) -> str:
         return self.tr("Status")
 
-    def scroll_to_result(self, item:KanbanWidget):
-        self.selectColumn(item.item.state()).ensureWidgetVisible(item,0,0)
+    def scroll_to_result(self, item: KanbanWidget):
+        self.selectColumn(item.item.state()).ensureWidgetVisible(item, 0, 0)
+
+    def get_persistent_settings(self) -> Dict[Any, Any]:
+        return {'available_collapsed': self.availableColumn.collapsed,
+                'completed_collapsed': self.completedColumn.collapsed,
+                'blocked_collapsed': self.blockedColumn.collapsed}
+
+    def restore_persistent_settings(self, settings: Dict[Any, Any]) -> None:
+        if 'available_collapsed' in settings:
+            self.availableColumn.collapsed = settings['available_collapsed']
+        if 'completed_collapsed' in settings:
+            self.completedColumn.collapsed = settings['completed_collapsed']
+        if 'blocked_collapsed' in settings:
+            self.blockedColumn.collapsed = settings['blocked_collapsed']
 
 
 class QueueView(LabeledColumn, AbstractView):
@@ -169,6 +182,12 @@ class QueueView(LabeledColumn, AbstractView):
 
     def get_eligible_widgets(self) -> List[KanbanWidget]:
         return list(filter(lambda x: x.isVisible(), self.findChildren(KanbanWidget)))
+
+    def get_persistent_settings(self) -> Dict[Any, Any]:
+        return {}
+
+    def restore_persistent_settings(self, settings: Dict[Any, Any]) -> None:
+        pass
 
 
 class KanbanBoardWidget(QFrame):
@@ -340,6 +359,8 @@ class KanbanBoardWindow(QMainWindow):
         # self.setWindowModified(True)
         self.updateTitle()
         self.prompt_to_recover()
+        if QSettings().value("Display/RestoreViewSettings", False, bool):
+            self.restore_view_settings()
 
     def prompt_to_recover(self):
         """
@@ -396,9 +417,24 @@ class KanbanBoardWindow(QMainWindow):
         print(filename)
         return filename
 
+    def persist_view_settings(self) -> None:
+        self.kanban.board.view_settings.clear()
+        self.kanban.board.view_settings.append(self.kanban.tab_container.currentIndex())
+        for i in self.kanban.views:
+            self.kanban.board.view_settings.append(i.get_persistent_settings())
+
+    def restore_view_settings(self) -> None:
+        start = 0
+        if isinstance(self.kanban.board.view_settings[0], int):
+            self.kanban.tab_container.setCurrentIndex(self.kanban.board.view_settings[0])
+            start = 1
+        for i, v in enumerate(self.kanban.board.view_settings[start:]):
+            self.kanban.views[i].restore_persistent_settings(v)
+
     def openSave(self):
         import os
         from src.settingNames import LAST_DOCUMENT_USED
+        self.persist_view_settings()
         filename = self.kanban.board.filename
         if self.kanban.board.filename is None:
             filename = self.getSaveFilename()
@@ -424,6 +460,7 @@ class KanbanBoardWindow(QMainWindow):
         gc.collect()
         if self.isWindowModified() and bool(QSettings().value("Recovery/AutoSave", False, bool)):
             print("Autosaving :D")
+            self.persist_view_settings()
             if self.kanban.board.filename is not None:
                 try:
                     self.kanban.board.save(self.kanban.board.filename + '.bak', False)
@@ -438,6 +475,7 @@ class KanbanBoardWindow(QMainWindow):
         if filename == '':
             return
         settings = QSettings()
+        self.persist_view_settings()
         try:
             self.kanban.board.save(filename)
             settings.setValue(LAST_DOCUMENT_USED, filename)
@@ -454,6 +492,7 @@ class KanbanBoardWindow(QMainWindow):
             self.prompt_to_recover()
             new_kanban = KanbanBoard.load(thing[0])
             self.kanban.newBoard(new_kanban)
+            self.restore_view_settings()
             self.updateTitle()
         except UnpicklingError:
             print("Huh")

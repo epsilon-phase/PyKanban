@@ -229,6 +229,21 @@ class TreeView(AbstractView):
         if self.finishedAdding:
             self.relayout(self.itemChoice.currentIndex())
 
+    def get_persistent_settings(self) -> Dict[Any, Any]:
+        r = {}
+        r['active_item'] = self.itemChoice.currentIndex()
+        r['hide_completed'] = self.hide_completed
+        r['extra_compact'] = self.extraCompact
+        return r
+
+    def restore_persistent_settings(self, settings: Dict[Any, Any]) -> None:
+        if 'active_item' in settings:
+            self.itemChoice.setCurrentIndex(settings['active_item'])
+        if 'extra_compact' in settings:
+            self.extraCompactCheckbox.setChecked(settings['extra_compact'])
+        if 'hide_completed' in settings:
+            self.hiding_completed.setChecked(settings['hide_completed'])
+
     def collapse(self, collapser: Collapser):
         """
         Handle a widget signalling that it should be collapsed,

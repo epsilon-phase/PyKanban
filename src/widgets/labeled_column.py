@@ -49,6 +49,20 @@ class LabeledColumn(QScrollArea):
                                   )
         self.widgetPanel.setVisible(not self.widgetPanel.isVisible())
 
+    @property
+    def collapsed(self) -> bool:
+        """
+        Whether or not the items in the widget are collapsed, that is, not shown.
+
+        :return: if the widgets are visible
+        """
+        return self.widgetPanel.isVisible()
+
+    @collapsed.setter
+    def collapsed(self, c: bool) -> None:
+        self.widgetPanel.setVisible(c)
+        self.toggleButton.setText(self.tr("Collapse") if c else self.tr("Expand"))
+
     def sort_widgets(self) -> None:
         """
         Sort the kanbanwidgets by priority.

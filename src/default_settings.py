@@ -4,7 +4,8 @@ from typing import *
 _defaults_ = {
     "Display": {
         "DescriptionLines": 3,
-        "CategoriesInEditor": True
+        "CategoriesInEditor": True,
+        'RestoreViewSettings': True
     },
     "Usability": {
         "OpenLastDocument": True
@@ -15,7 +16,7 @@ _defaults_ = {
     "Recovery": {
         "AutoSave": True,
         "Interval": 120
-    }
+    },
 }
 
 

@@ -115,3 +115,19 @@ class AbstractView(QWidget):
         self.search_index %= len(self.matching)
         self.apply_selected_styling(self.currentSearchResult())
         self.scroll_to_result(self.currentSearchResult())
+
+    def get_persistent_settings(self) -> Dict[Any, Any]:
+        """
+        Get the settings from the view that can be safely restored
+
+        :return: A dictionary of those settings
+        """
+        raise NotImplementedError
+
+    def restore_persistent_settings(self, settings: Dict[Any, Any]) -> None:
+        """
+        Restore the settings of the view, as given by get_persistent_settings
+
+        :param settings: A dictionary of settings to restore
+        """
+        raise NotImplementedError
