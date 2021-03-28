@@ -2,16 +2,16 @@ from __future__ import annotations
 from PySide2.QtWidgets import *
 from PySide2.QtCore import Qt, QSettings, QTimer
 from PySide2.QtGui import QKeySequence, QCloseEvent
-from src.kanban import *
-from src.kanbanwidget import KanbanWidget
-from src.kanbanitemdialog import KanbanItemDialog
-from src.categorylist import CategoryEditor
-from src.treeview import TreeView
+from pykanban.kanban import *
+from pykanban.kanbanwidget import KanbanWidget
+from pykanban.kanbanitemdialog import KanbanItemDialog
+from pykanban.categorylist import CategoryEditor
+from pykanban.treeview import TreeView
 from typing import *
 from pickle import PicklingError
-from src.abstractview import AbstractView
-from src.optioneditor import OptionDialog
-from src.widgets.labeled_column import LabeledColumn
+from pykanban.abstractview import AbstractView
+from pykanban.optioneditor import OptionDialog
+from pykanban.widgets.labeled_column import LabeledColumn
 
 
 class StatusView(QFrame, AbstractView):
@@ -359,8 +359,8 @@ class KanbanBoardWindow(QMainWindow):
         # self.setWindowModified(True)
         self.updateTitle()
         self.prompt_to_recover()
-        if QSettings().value("Display/RestoreViewSettings", False, bool):
-            self.restore_view_settings()
+
+        self.restore_view_settings()
 
     def prompt_to_recover(self):
         """
@@ -424,6 +424,8 @@ class KanbanBoardWindow(QMainWindow):
             self.kanban.board.view_settings.append(i.get_persistent_settings())
 
     def restore_view_settings(self) -> None:
+        if QSettings().value("Display/RestoreViewSettings", False, bool):
+            return
         start = 0
         if isinstance(self.kanban.board.view_settings[0], int):
             self.kanban.tab_container.setCurrentIndex(self.kanban.board.view_settings[0])
@@ -433,7 +435,7 @@ class KanbanBoardWindow(QMainWindow):
 
     def openSave(self):
         import os
-        from src.settingNames import LAST_DOCUMENT_USED
+        from pykanban.settingNames import LAST_DOCUMENT_USED
         self.persist_view_settings()
         filename = self.kanban.board.filename
         if self.kanban.board.filename is None:
@@ -469,7 +471,7 @@ class KanbanBoardWindow(QMainWindow):
                 print("Autosaved :)")
 
     def openSaveAs(self):
-        from src.settingNames import LAST_DOCUMENT_USED
+        from pykanban.settingNames import LAST_DOCUMENT_USED
 
         filename = self.getSaveFilename()
         if filename == '':

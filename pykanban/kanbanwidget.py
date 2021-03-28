@@ -1,7 +1,7 @@
 from PySide2.QtWidgets import *
-from src.kanban import *
-from src.kanbanitemdialog import *
-import src.settingNames as settingNames
+from pykanban.kanban import *
+from pykanban.kanbanitemdialog import *
+import pykanban.settingNames as settingNames
 from PySide2.QtCore import Signal, QEvent, Qt, QSettings
 from PySide2.QtGui import QMouseEvent, QCursor, QPalette, QPixmap, QPaintEvent, QPainter
 from typing import Callable

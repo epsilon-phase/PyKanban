@@ -16,10 +16,11 @@ def run():
                 kbb = kanban.KanbanBoard.load(val)
         except FileNotFoundError:
             pass
-    henlo=KanbanBoardWindow(kbb)
-    henlo.resize(1000, 1000)
+    henlo = KanbanBoardWindow(kbb)
+    henlo.resize(640, 480)
     henlo.show()
     app.exec_()
+
 
 if __name__ == '__main__':
     app = QApplication([])
@@ -30,6 +31,3 @@ if __name__ == '__main__':
     settings = QSettings()
     defaults.initialize_to_defaults()
     run()
-
-
-

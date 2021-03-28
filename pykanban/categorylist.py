@@ -1,8 +1,9 @@
 from PySide2.QtWidgets import *
 from PySide2.QtGui import QBrush, QPixmap
 from PySide2.QtCore import Qt
-from src.kanban import *
-from src.taskcategory import CategoryData
+from pykanban.kanban import *
+from pykanban.taskcategory import CategoryData
+
 
 class CategoryEditor(QDialog):
     """
@@ -11,7 +12,7 @@ class CategoryEditor(QDialog):
     Currently permits associating the category with a color.
     """
     #: The board populated from
-    board:KanbanBoard
+    board: KanbanBoard
 
     def __init__(self, board:KanbanBoard, parent:QWidget=None):
         super(CategoryEditor,self).__init__(parent)

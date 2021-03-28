@@ -3,7 +3,7 @@ from typing import Optional
 from PySide2.QtCore import Qt
 from PySide2.QtWidgets import QScrollArea, QLabel, QVBoxLayout, QWidget, QPushButton, QFrame
 
-from src.kanbanwidget import KanbanWidget
+from pykanban.kanbanwidget import KanbanWidget
 
 
 class LabeledColumn(QScrollArea):

@@ -337,7 +337,7 @@ class KanbanBoard:
 
     def export(self, filename:str) -> None:
         if KanbanBoard.Encoder is None:
-            from src.serializers import KanbanBoardEncoder
+            from pykanban.serializers import KanbanBoardEncoder
             KanbanBoard.Encoder = KanbanBoardEncoder
         js = json.dumps(self,cls=KanbanBoard.Encoder)
         with open(filename, 'w') as f:
@@ -352,7 +352,7 @@ class KanbanBoard:
         In either case, it provides some way of enabling new features on
         old saves, so that's quite nice.
         """
-        from src.taskcategory import CategoryData
+        from pykanban.taskcategory import CategoryData
         from PySide2.QtGui import QColor
         if not hasattr(self,'categories'):
             self.categories=set()
@@ -389,8 +389,9 @@ class KanbanBoard:
         if filename.endswith(".json") or filename.endswith('.json.bak'):
             ret = KanbanBoard.loadJson(filename)
         else:
+            from pykanban.serializers import KanbanUnpickler
             with open(filename, 'rb') as f:
-                ret = pickle.load(f)
+                ret = KanbanUnpickler(f).load()
                 ret._fix_missing()
         if filename.endswith('.bak'):
             filename = filename[0:-4]
@@ -400,7 +401,7 @@ class KanbanBoard:
     @staticmethod
     def loadJson(filename: str) -> KanbanBoard:
         if KanbanBoard.Decoder is None:
-            from src.serializers import as_kanban_board
+            from pykanban.serializers import as_kanban_board
             KanbanBoard.Decoder = as_kanban_board
         with open(filename, 'r') as f:
             return json.load(f, object_hook=KanbanBoard.Decoder)

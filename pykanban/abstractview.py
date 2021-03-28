@@ -1,6 +1,6 @@
-from src.kanban import KanbanBoard, KanbanItem
+from pykanban.kanban import KanbanBoard, KanbanItem
 from PySide2.QtWidgets import QWidget, QFrame
-from src.kanbanwidget import KanbanWidget
+from pykanban.kanbanwidget import KanbanWidget
 from typing import *
 
 

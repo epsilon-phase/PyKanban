@@ -1,9 +1,9 @@
 from PySide2.QtWidgets import *
 from PySide2.QtGui import QPaintEvent, QPainter, QPainterPath, QColor
 from PySide2.QtCore import Signal, QTimer, Qt, QEvent
-from src.kanban import KanbanBoard, KanbanItem, ItemState
-from src.kanbanwidget import KanbanWidget
-from src.abstractview import AbstractView
+from pykanban.kanban import KanbanBoard, KanbanItem, ItemState
+from pykanban.kanbanwidget import KanbanWidget
+from pykanban.abstractview import AbstractView
 from typing import *
 
 

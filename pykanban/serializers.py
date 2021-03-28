@@ -1,20 +1,24 @@
-from src.kanban import KanbanBoard,KanbanItem
-from src.taskcategory import CategoryData
+from pykanban.kanban import KanbanBoard, KanbanItem
+from pykanban.taskcategory import CategoryData
 from typing import *
 from json import JSONEncoder
-from PySide2.QtGui import QColor,QPixmap
-
+from PySide2.QtGui import QColor, QPixmap
 from PySide2.QtCore import QByteArray, QBuffer, QIODevice
 
-def ColorToTuple(color:QColor)->Tuple[int,int,int,int]:
-    return (color.red(),color.green(),color.blue(),color.alpha())
+import pickle
 
-def ColorFromTuple(tuple)->QColor:
-    return QColor(tuple[0],tuple[1],tuple[2],tuple[3])
 
-def as_kanban_item(dct:dict):
+def ColorToTuple(color: QColor) -> Tuple[int, int, int, int]:
+    return (color.red(), color.green(), color.blue(), color.alpha())
+
+
+def ColorFromTuple(tuple) -> QColor:
+    return QColor(tuple[0], tuple[1], tuple[2], tuple[3])
+
+
+def as_kanban_item(dct: dict):
     if '__kanbanitem__' in dct:
-        result = KanbanItem(dct['name'],dct['description'],dct['priority'])
+        result = KanbanItem(dct['name'], dct['description'], dct['priority'])
         result.category = set(dct['category'])
         result.depends_on = dct['depends_on']
         result.completed = dct['completed']
@@ -99,8 +103,19 @@ class KanbanBoardEncoder(JSONEncoder):
         result['view_settings'] = kanban.view_settings
         return result
 
-
-    def default(self,obj):
-        if isinstance(obj,KanbanBoard):
+    def default(self, obj):
+        if isinstance(obj, KanbanBoard):
             return self.encodeKanban(obj)
         return JSONEncoder.default(self, obj)
+
+
+class KanbanUnpickler(pickle.Unpickler):
+    """
+    Patch old namespaced things into the new namespace
+    """
+
+    def find_class(self, module_name: str, name: str) -> Any:
+        renamed = module_name
+        if renamed.startswith('src'):
+            renamed = renamed.replace('src', 'pykanban')
+        return super(KanbanUnpickler, self).find_class(renamed, name)

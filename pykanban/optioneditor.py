@@ -81,7 +81,7 @@ class OptionWidget(QWidget):
 
 class OptionDialog(QDialog):
     def __init__(self, parent=None):
-        from src.settingNames import AUTOSAVE_ENABLED, AUTOSAVE_INTERVAL, RESTORE_VIEW_SETTINGS
+        from pykanban.settingNames import AUTOSAVE_ENABLED, AUTOSAVE_INTERVAL, RESTORE_VIEW_SETTINGS
         super(OptionDialog, self).__init__(parent)
 
         self.setLayout(QVBoxLayout())

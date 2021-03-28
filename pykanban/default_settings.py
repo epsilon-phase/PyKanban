@@ -20,7 +20,7 @@ _defaults_ = {
 }
 
 
-def check_slash_set(settings: QSettings, configuration_path: List[str], currentItem: Dict[str, Any]):
+def check_slash_set(settings: QSettings, configuration_path: List[str], current_item: Dict[str, Any]):
     """
     Initializes QSettings based on the contents of currentItem
     
@@ -28,7 +28,7 @@ def check_slash_set(settings: QSettings, configuration_path: List[str], currentI
     :param configuration_path: The path of the setting information
     :param currentItem: The current section of the default dictionary to initialize
     """
-    for key, value in currentItem.items():
+    for key, value in current_item.items():
         if isinstance(value, dict):
             check_slash_set(settings, configuration_path + [key], value)
         else:
