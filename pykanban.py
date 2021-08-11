@@ -1,3 +1,6 @@
+import sys
+import argparse
+
 import pykanban.kanban as kanban
 from pykanban.kanbanboardwindow import KanbanBoardWindow
 import pykanban.default_settings as defaults
@@ -6,20 +9,21 @@ from PySide2.QtWidgets import *
 from PySide2.QtCore import QSettings
 
 
-def run():
+def run(filename: str):
     kbb = kanban.KanbanBoard()
-    if bool(settings.value(settingNames.OPEN_LAST_USED_DOCUMENT)):
-        val = settings.value(settingNames.LAST_DOCUMENT_USED)
-        print(f"Found last document of {val}")
-        try:
-            if val is not None:
-                kbb = kanban.KanbanBoard.load(val)
-        except FileNotFoundError:
-            pass
-    henlo=KanbanBoardWindow(kbb)
-    henlo.resize(1000, 1000)
-    henlo.show()
+    if not filename and bool(settings.value(settingNames.OPEN_LAST_USED_DOCUMENT)):
+        filename = settings.value(settingNames.LAST_DOCUMENT_USED)
+        print(f"Found last document of {filename}")
+    try:
+        if filename is not None:
+            kbb = kanban.KanbanBoard.load(filename)
+    except FileNotFoundError:
+        pass
+    window = KanbanBoardWindow(kbb)
+    window.resize(1000, 1000)
+    window.show()
     app.exec_()
+
 
 if __name__ == '__main__':
     app = QApplication([])
@@ -29,7 +33,7 @@ if __name__ == '__main__':
 
     settings = QSettings()
     defaults.initialize_to_defaults()
-    run()
-
-
-
+    parser = argparse.ArgumentParser("Run pykanban")
+    parser.add_argument("File", metavar='N', default=None, nargs='?',
+                        help="The file to open")
+    run(parser.parse_args().File)

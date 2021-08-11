@@ -61,7 +61,7 @@ class KanbanItem:
         self.category = set()
         self.widget = []
 
-    def category_matches(self,text:str)->bool:
+    def category_matches(self, text: str) -> bool:
         """
         Determine if a category is matched by the string
 
@@ -73,7 +73,7 @@ class KanbanItem:
                 return True
         return False
 
-    def matches(self,text:str)->bool:
+    def matches(self, text: str) -> bool:
         """
         Determine if this item matches a search string
 

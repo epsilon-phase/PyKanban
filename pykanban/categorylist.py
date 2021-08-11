@@ -135,18 +135,18 @@ class CategoryEditor(QDialog):
     def editCategoryForeground(self)->None:
         item = self.listView.selectedItems()[0]
         data = item.data(32)
-        initialColor=None
+        initialColor = None
         if data is not None:
-            initialColor=data.foreground
+            initialColor = data.foreground
         color = QColorDialog.getColor(initial=initialColor)
         if color.isValid():
             print(f"Got valid color {color.red()}, {color.green()},{color.blue()}")
             item.setTextColor(color)
             data = item.data(32)
             if data is None:
-                data = CategoryData(color,None)
-            data.foreground=color
-            item.setData(32,data)
+                data = CategoryData(color, None)
+            data.foreground = color
+            item.setData(32, data)
         else:
             print("Got invalid color :(")
 
